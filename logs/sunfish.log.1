@@ -1,0 +1,111 @@
+2024-07-22 14:26:58,485 INFO: Sunfish startup [in /Users/pbacken/project-sunfish/app/__init__.py:43]
+2024-07-22 14:27:07,312 ERROR: Exception on /edit_profile [POST] [in /Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask/app.py:838]
+Traceback (most recent call last):
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.IntegrityError: UNIQUE constraint failed: user.username
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask_login/utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+  File "/Users/pbacken/project-sunfish/app/routes.py", line 84, in edit_profile
+    db.session.commit()
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/orm/scoping.py", line 597, in commit
+    return self._proxied.commit()
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/orm/session.py", line 2017, in commit
+    trans.commit(_to_root=True)
+  File "<string>", line 2, in commit
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/orm/session.py", line 1302, in commit
+    self._prepare_impl()
+  File "<string>", line 2, in _prepare_impl
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/orm/session.py", line 1277, in _prepare_impl
+    self.session.flush()
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/orm/session.py", line 4341, in flush
+    self._flush(objects)
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/orm/session.py", line 4477, in _flush
+    transaction.rollback(_capture_exception=True)
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/orm/session.py", line 4437, in _flush
+    flush_context.execute()
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/orm/unitofwork.py", line 466, in execute
+    rec.execute(self)
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/orm/unitofwork.py", line 642, in execute
+    util.preloaded.orm_persistence.save_obj(
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/orm/persistence.py", line 85, in save_obj
+    _emit_update_statements(
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/orm/persistence.py", line 912, in _emit_update_statements
+    c = connection.execute(
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py", line 1418, in execute
+    return meth(
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/sql/elements.py", line 515, in _execute_on_connection
+    return connection._execute_clauseelement(
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py", line 1640, in _execute_clauseelement
+    ret = self._execute_context(
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py", line 2353, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: user.username
+[SQL: UPDATE user SET username=?, about_me=? WHERE user.id = ?]
+[parameters: ('pbacken', '', 2)]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2024-07-22 14:57:47,912 INFO: Sunfish startup [in /Users/pbacken/project-sunfish/app/__init__.py:45]
+2024-07-22 15:10:18,067 INFO: Sunfish startup [in /Users/pbacken/project-sunfish/app/__init__.py:45]
+2024-07-22 15:10:21,857 ERROR: Exception on /index [GET] [in /Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask/app.py:838]
+Traceback (most recent call last):
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask_login/utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+  File "/Users/pbacken/project-sunfish/app/routes.py", line 24, in index
+    return render_template('index.html', title='Home')
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask/templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask/templating.py", line 131, in _render
+    rv = template.render(context)
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/jinja2/environment.py", line 1304, in render
+    self.environment.handle_exception()
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/jinja2/environment.py", line 939, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/pbacken/project-sunfish/app/templates/index.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "/Users/pbacken/project-sunfish/app/templates/base.html", line 30, in top-level template code
+    <a class="nav-link" aria-current="page" href="{{ url_for('explore') }}">Explore</a>
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask/app.py", line 1084, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/flask/app.py", line 1073, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+  File "/Users/pbacken/project-sunfish/venv/lib/python3.9/site-packages/werkzeug/routing/map.py", line 924, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'explore'. Did you mean 'edit_profile' instead?
+2024-07-22 15:11:00,715 INFO: Sunfish startup [in /Users/pbacken/project-sunfish/app/__init__.py:45]
+2024-07-22 15:35:52,444 INFO: Sunfish startup [in /Users/pbacken/project-sunfish/app/__init__.py:47]
