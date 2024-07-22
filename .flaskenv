@@ -1,1 +1,2 @@
 FLASK_APP=sunfish.py
+FLASK_DEBUG=1
