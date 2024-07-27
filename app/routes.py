@@ -4,9 +4,21 @@ from app.email import send_password_reset_email
 from app.forms import LoginForm, RegistrationForm, EditProfileForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.models import User
 from datetime import datetime, timezone
-from flask import render_template, flash, redirect, url_for, request
+from flask import render_template, flash, redirect, url_for, request, session, copy_current_request_context
 from flask_login import current_user, login_user, logout_user, login_required
 from urllib.parse import urlsplit
+from flask_socketio import SocketIO, emit, disconnect
+from threading import Lock
+
+async_mode = None
+socketio = SocketIO(app, async_mode=async_mode)
+thread = None
+thread_lock = Lock()
+
+
+def background_thread():
+    """Example of how to send server generated events to clients."""
+    count = 0
 
 
 @app.before_request
@@ -122,3 +134,46 @@ def reset_password(token):
         flash('Your password has been reset.')
         return redirect(url_for('login'))
     return render_template('reset_password.html', form=form)
+
+
+@app.route('/meeting', methods=['GET', 'POST'])
+def meeting():
+    return render_template('meeting.html', async_mode=socketio.async_mode)
+
+
+@socketio.event
+def my_event(message):
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    emit('my_response',
+         {'data': message['data'], 'count': session['receive_count']})
+    print(message)
+
+
+@socketio.event
+def disconnect_request():
+    @copy_current_request_context
+    def can_disconnect():
+        disconnect()
+
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    # for this emit we use a callback function
+    # when the callback function is invoked we know that the message has been
+    # received and it is safe to disconnect
+    emit('my_response',
+         {'data': 'Disconnected!', 'count': session['receive_count']},
+         callback=can_disconnect)
+
+
+@socketio.event
+def connect():
+    global thread
+    with thread_lock:
+        if thread is None:
+            thread = socketio.start_background_task(background_thread)
+    emit('my_response', {'data': 'Connected', 'count': 0})
+    print('connected')
+
+
+@socketio.on('disconnect')
+def test_disconnect():
+    print('Client disconnected', request.sid)
