@@ -9,11 +9,16 @@ from flask_login import current_user, login_user, logout_user, login_required
 from urllib.parse import urlsplit
 from flask_socketio import SocketIO, emit, disconnect
 from threading import Lock
+import assemblyai as aai
+import json
+from app.func_agenda.agenda_parse import openai_agenda, to_pretty_json
 
 async_mode = None
 socketio = SocketIO(app, async_mode=async_mode)
 thread = None
 thread_lock = Lock()
+aai.settings.api_key = "68b893a3d9d343638b42e03a065b25fb"
+app.jinja_env.filters['tojson_pretty'] = to_pretty_json
 
 
 def background_thread():
@@ -138,7 +143,23 @@ def reset_password(token):
 
 @app.route('/meeting', methods=['GET', 'POST'])
 def meeting():
-    return render_template('meeting.html', async_mode=socketio.async_mode)
+    # agenda_doc = "GV_meeting.pdf"
+    # agenda_doc = "meeting.pdf"
+    # agenda_doc = "crystal_meeting.pdf"
+    agenda_doc = "new_hope_meeting.pdf"
+    agenda_text = openai_agenda(agenda_doc)
+
+    return render_template('agenda.html', agenda_text=agenda_text)
+
+
+@app.route('/audioR', methods=['GET', 'POST'])
+def audio_r():
+    return render_template('audioR.html')
+
+
+@app.route('/audio_r2', methods=['GET', 'POST'])
+def audio_r2():
+    return render_template('audioR.html')
 
 
 @socketio.event
@@ -147,6 +168,43 @@ def my_event(message):
     emit('my_response',
          {'data': message['data'], 'count': session['receive_count']})
     print(message)
+
+
+@socketio.event
+def event_record(message):
+    print('Start event_record')
+    print(message)
+
+    emit('my_response',
+         {'data': 'Start Recording', 'count': '1'})
+
+
+@socketio.event
+def stream_media(message):
+    print('Start event_record')
+    # print(message)
+
+    transcriber = aai.RealtimeTranscriber(
+        on_data=on_data,
+        on_error=on_error,
+        sample_rate=44_100,
+        on_open=on_open,  # optional
+        on_close=on_close,  # optional
+    )
+    # Start the connection
+    transcriber.connect()
+    print('connect to transcriber')
+
+    transcriber.stream(message)
+    print("streaming")
+
+    transcriber.close()
+    print('transcribe close')
+
+    emit('my_response', 'audio stream started')
+
+    emit('my_response',
+         {'data': 'Start Recording', 'count': '1'})
 
 
 @socketio.event
@@ -170,10 +228,40 @@ def connect():
     with thread_lock:
         if thread is None:
             thread = socketio.start_background_task(background_thread)
-    emit('my_response', {'data': 'Connected', 'count': 0})
-    print('connected')
+    emit('my_response', {'data': 'Socket Connected', 'count': 0})
+    print('socket connected (connect)')
 
 
 @socketio.on('disconnect')
 def test_disconnect():
     print('Client disconnected', request.sid)
+
+
+def on_open(session_opened: aai.RealtimeSessionOpened):
+    # "This function is called when the connection has been established."
+
+    print("Session ID:", session_opened.session_id)
+
+
+def on_data(transcript: aai.RealtimeTranscript):
+    # "This function is called when a new transcript has been received."
+
+    if not transcript.text:
+        return
+
+    if isinstance(transcript, aai.RealtimeFinalTranscript):
+        print(transcript.text, end="\r\n")
+    else:
+        print(transcript.text, end="\r")
+
+
+def on_error(error: aai.RealtimeError):
+    # "This function is called when the connection has been closed."
+
+    print("An error occured:", error)
+
+
+def on_close():
+    # "This function is called when the connection has been closed."
+
+    print("Closing Session")

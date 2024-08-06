@@ -62,5 +62,6 @@ class ResetPasswordForm(FlaskForm):
         'Repeat Password', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Request Password Reset')
 
-
+# date_posted = DateField('Date', format='%Y-%m-%d')
+#     time_posted = TimeField('Time', format='%H:%M')
 
