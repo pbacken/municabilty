@@ -52,3 +52,16 @@ class User(UserMixin, db.Model):
 @login.user_loader
 def load_user(id):
     return db.session.get(User, int(id))
+
+
+class MeetingInfo(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    meeting_type: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    meeting_date: so.Mapped[datetime] = so.mapped_column(sa.DATETIME, index=True)
+    meeting_time: so.Mapped[datetime] = so.mapped_column(sa.DATETIME, index=True)
+
+
+    email: so.Mapped[str] = so.mapped_column(sa.String(120), index=True,
+                                             unique=True)
+    password_hash: so.Mapped[Optional[str]] = so.mapped_column(sa.String(256))
+    about_me: so.Mapped[Optional[str]] = so.mapped_column(sa.String(140))

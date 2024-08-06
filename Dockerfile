@@ -3,6 +3,7 @@ FROM python:slim
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 RUN pip install gunicorn pymysql cryptography
+RUN apt install portaudio19-dev
 
 COPY app app
 COPY migrations migrations
