@@ -1,20 +1,22 @@
-{% import "bootstrap_wtf.html" as wtf %}
+{% extends "base.html" %}
     {% block content %}
         <div class="container bg-primary">
             <div id="layoutAuthentication">
                 <div id="layoutAuthentication_content">
-                    class="bg-primary"
                     <main>
                         <div class="container-xl px-4">
                             <div class="row justify-content-center">
-                                <div class="col-lg-5">
+                                <div class="col-lg-8">
                                     <!-- Basic login form-->
                                     <div class="card shadow-lg border-0 rounded-lg mt-5">
-                                        <div class="card-header justify-content-center"><h3 class="fw-light my-4">Register</h3></div>
+                                        <div class="card-header justify-content-center">
+                                            <h3 class="fw-light my-4">Process Agenda</h3>
+                                        </div>
                                         <div class="card-body">
-                                            <!-- Login form-->
-                                            {{ form.hidden_tag() }}
-                                            {{ wtf.quick_form(form) }}
+                                            <div class="bg-white p-5 rounded shadow-sm border">
+                                            <!-- Content Here -->
+                                                {{ agenda }}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -24,4 +26,4 @@
                 </div>
             </div>
         </div>
-        {% endblock %}
+{% endblock %}
