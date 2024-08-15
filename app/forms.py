@@ -2,7 +2,8 @@ import sqlalchemy as sa
 from app import db
 from app.models import User
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField
+from flask_wtf.file import FileField, FileRequired, FileAllowed
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField
 from wtforms.validators import DataRequired, ValidationError, Email, EqualTo, Length
 
 
@@ -61,6 +62,20 @@ class ResetPasswordForm(FlaskForm):
     password2 = PasswordField(
         'Repeat Password', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Request Password Reset')
+
+
+class MeetingForm(FlaskForm):
+    meeting_type = SelectField('Meeting Type', choices=[('council', 'City Council'),
+                                                         ('hrc', 'Human Rights Commission'),
+                                                         ('plan', 'Planning Commission'),
+                                                         ('prf', 'Parks, Rec and Forestry'),
+                                                         ('sen', 'Senior Commission'),
+                                                         ('sus', 'Sustainability Committee'),
+                                                         ('chart', 'Charter Commission')])
+    agenda_file = FileField("File",
+                            validators=[FileRequired()])
+
+    submit = SubmitField('Create Meeting')
 
 # date_posted = DateField('Date', format='%Y-%m-%d')
 #     time_posted = TimeField('Time', format='%H:%M')

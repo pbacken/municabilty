@@ -42,7 +42,7 @@ def openai_agenda(agenda_doc):
     client = openai.OpenAI()
 
     text_extract = ""
-    with pdfplumber.open("app/audio/{}".format(agenda_doc)) as pdf:
+    with pdfplumber.open("app/files/{}".format(agenda_doc)) as pdf:
         for page in pdf.pages:
             # print(page.page_number)
             if page.page_number < 4:
@@ -69,7 +69,6 @@ def openai_agenda(agenda_doc):
     )
 
     agenda = json.loads(completion.choices[0].message.content)
-    print(agenda)
     # agenda = json.loads(agenda)
 
     return agenda

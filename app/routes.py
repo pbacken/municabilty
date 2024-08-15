@@ -1,16 +1,23 @@
+import json
+
 import sqlalchemy as sa
+import os
 from app import app, db
 from app.email import send_password_reset_email
-from app.forms import LoginForm, RegistrationForm, EditProfileForm, ResetPasswordRequestForm, ResetPasswordForm
+from app.forms import LoginForm, RegistrationForm, EditProfileForm, ResetPasswordRequestForm, \
+    ResetPasswordForm, MeetingForm
 from app.models import User
 from datetime import datetime, timezone
-from flask import render_template, flash, redirect, url_for, request, session, copy_current_request_context
+from flask import render_template, flash, redirect, url_for, request, session, copy_current_request_context, abort
 from flask_login import current_user, login_user, logout_user, login_required
 from urllib.parse import urlsplit
 from flask_socketio import SocketIO, emit, disconnect
+from flask_wtf.csrf import CSRFError
 from threading import Lock
 import assemblyai as aai
-import json
+import threading
+from flask_wtf.file import MultipleFileField, FileRequired
+from werkzeug.utils import secure_filename
 from app.func_agenda.agenda_parse import openai_agenda, to_pretty_json
 
 async_mode = None
@@ -19,6 +26,21 @@ thread = None
 thread_lock = Lock()
 aai.settings.api_key = "68b893a3d9d343638b42e03a065b25fb"
 app.jinja_env.filters['tojson_pretty'] = to_pretty_json
+
+app.config.update(
+    # Flask-Dropzone config:
+    DROPZONE_DEFAULT_MESSAGE='<i class="size-48" data-feather="file"></i><br><br>Drag your PDF here<br>Or'
+                             '<br>Click to Browse Files',
+    DROPZONE_ENABLE_CSRF=True,
+    DROPZONE_ALLOWED_FILE_CUSTOM=True,
+    DROPZONE_ALLOWED_FILE_TYPE='.pdf',
+    DROPZONE_MAX_FILE_SIZE=3,
+    # DROPZONE_UPLOAD_ON_CLICK=True,
+    # DROPZONE_IN_FORM=True,
+    DROPZONE_UPLOAD_ACTION='handle_upload',  # URL or endpoint
+    # DROPZONE_REDIRECT_VIEW='completed',
+    # DROPZONE_UPLOAD_BTN_ID='submit'
+)
 
 
 def background_thread():
@@ -37,7 +59,7 @@ def before_request():
 @app.route('/index')
 @login_required
 def index():
-    user = {'username': 'Sonny'}
+    # form = MeetingForm()
     return render_template('index.html', title='Home')
 
 
@@ -57,7 +79,7 @@ def login():
         if not next_page or urlsplit(next_page).netloc != '':
             next_page = url_for('index')
         return redirect(url_for('index'))
-    return render_template('login.html', title='Sign In', form=form)
+    return render_template('auth-login.html', title='Sign In', form=form)
 
 
 @app.route('/logout')
@@ -89,7 +111,7 @@ def register():
         db.session.commit()
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
-    return render_template('register.html', title='Register', form=form)
+    return render_template('auth-register.html', title='Register', form=form)
 
 
 @app.route('/edit_profile', methods=['GET', 'POST'])
@@ -150,6 +172,84 @@ def meeting():
     agenda_text = openai_agenda(agenda_doc)
 
     return render_template('agenda.html', agenda_text=agenda_text)
+
+
+@app.errorhandler(413)
+def too_large(e):
+    return "File is too large", 413
+
+
+@app.errorhandler(CSRFError)
+def csrf_error(e):
+    return e.description, 400
+
+
+@app.route('/create_meeting')
+@login_required
+def create_meeting_2():
+    form = MeetingForm()
+    return render_template('meeting2.html', title='Create Meeting', form=form)
+
+
+@app.route('/create_meeting', methods=['POST'])
+@login_required
+def create_meeting():
+
+    uploaded_file = request.files['file']
+    filename = secure_filename(uploaded_file.filename)
+    if filename != '':
+        file_ext = os.path.splitext(filename)[1]
+        if file_ext not in app.config['UPLOAD_EXTENSIONS']:
+            return "Invalid file", 400
+    uploaded_file.save(os.path.join(app.config['UPLOAD_PATH'], filename))
+    # meeting_type = form.meeting_type.data
+
+    return redirect(url_for('index'))
+
+
+@app.route('/create_meeting_3', methods=['GET'])
+@login_required
+def create_meeting_3():
+    print(app.config['DROPZONE_DEFAULT_MESSAGE'])
+
+    return render_template('meeting3.html', title='Create Meeting')
+    # return render_template('dz_test.html', title='Create Meeting')
+
+
+@app.route('/upload', methods=['POST'])
+def handle_upload():
+    print('uploading...')
+
+    f = request.files.get('file')
+    filename = secure_filename(f.filename)
+    if filename != '':
+        f.save(os.path.join(app.config['UPLOAD_PATH'], filename))
+
+    # return '', 204
+    return render_template('process-agenda.html', filename=filename)
+
+
+def quick_processing_function():
+    return render_template('process-agenda.html'), True
+
+
+def long_processing_function(filename):
+    print("LP name: " + filename)
+    print('Start processing')
+    parsed_agenda = openai_agenda(filename)
+
+    return parsed_agenda
+
+
+@app.route('/process-agenda/<filename>')
+def process_agenda_function(filename):
+
+    agenda = openai_agenda(secure_filename(filename))
+
+    print(type(agenda))
+
+
+    return render_template('meeting-config.html', agenda=agenda)
 
 
 @app.route('/audioR', methods=['GET', 'POST'])

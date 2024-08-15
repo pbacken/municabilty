@@ -8,11 +8,11 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_dropzone import Dropzone
+from flask_wtf.csrf import CSRFProtect, CSRFError
 
-app = Flask(__name__,
-            static_url_path='',
-            static_folder='static'
-            )
+
+app = Flask(__name__)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -20,6 +20,9 @@ login = LoginManager(app)
 login.login_view = 'login'
 mail = Mail(app)
 moment = Moment(app)
+dropzone = Dropzone(app)
+app.config['UPLOAD_PATH'] = 'app/files'
+csrf = CSRFProtect(app)
 
 if not app.debug:
     if app.config['MAIL_SERVER']:
@@ -32,7 +35,7 @@ if not app.debug:
         mail_handler = SMTPHandler(
             mailhost=(app.config['MAIL_SERVER'], app.config['MAIL_PORT']),
             fromaddr='pat@clevercobra.com',
-            toaddrs=app.config['ADMINS'], subject='Canvasser Failure',
+            toaddrs=app.config['ADMINS'], subject='Sunfish Failure',
             credentials=auth, secure=secure)
         mail_handler.setLevel(logging.ERROR)
         app.logger.addHandler(mail_handler)
