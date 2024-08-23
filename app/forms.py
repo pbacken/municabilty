@@ -3,7 +3,8 @@ from app import db
 from app.models import User
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField, \
+    FieldList, FormField, Form
 from wtforms.validators import DataRequired, ValidationError, Email, EqualTo, Length
 
 
@@ -17,6 +18,7 @@ class LoginForm(FlaskForm):
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
+    user_city = StringField('City', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField(
         'Repeat Password', validators=[DataRequired(), EqualTo('password')])
@@ -37,7 +39,9 @@ class RegistrationForm(FlaskForm):
 
 class EditProfileForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
+    user_city = StringField('City', render_kw={'readonly': True})
     about_me = TextAreaField('About me', validators=[Length(min=0, max=140)])
+
     submit = SubmitField('Submit')
 
     def __init__(self, original_username, *args, **kwargs):
@@ -77,6 +81,21 @@ class MeetingForm(FlaskForm):
 
     submit = SubmitField('Create Meeting')
 
-# date_posted = DateField('Date', format='%Y-%m-%d')
-#     time_posted = TimeField('Time', format='%H:%M')
+
+class MembersPresentForm(Form):
+    """A form for members"""
+    member_meet = BooleanField()
+
+
+class UpdateAgendaForm(FlaskForm):
+    meet_type = SelectField('Meeting Type')
+    staff = SelectField('Staff Present', choices=[('council', 'City Council'),
+                                                         ('hrc', 'Human Rights Commission'),
+                                                         ('plan', 'Planning Commission'),
+                                                         ('prf', 'Parks, Rec and Forestry'),
+                                                         ('sen', 'Senior Commission'),
+                                                         ('sus', 'Sustainability Committee'),
+                                                         ('chart', 'Charter Commission')])
+
+    members_present = FieldList(FormField(MembersPresentForm), min_entries=1)
 

@@ -5,8 +5,8 @@ import os
 from app import app, db
 from app.email import send_password_reset_email
 from app.forms import LoginForm, RegistrationForm, EditProfileForm, ResetPasswordRequestForm, \
-    ResetPasswordForm, MeetingForm
-from app.models import User
+    ResetPasswordForm, MeetingForm, MembersPresentForm, UpdateAgendaForm
+from app.models import User, EntityName, EntityMembers, EntityGroups
 from datetime import datetime, timezone
 from flask import render_template, flash, redirect, url_for, request, session, copy_current_request_context, abort
 from flask_login import current_user, login_user, logout_user, login_required
@@ -18,7 +18,11 @@ import assemblyai as aai
 import threading
 from flask_wtf.file import MultipleFileField, FileRequired
 from werkzeug.utils import secure_filename
-from app.func_agenda.agenda_parse import openai_agenda, to_pretty_json
+from app.func_agenda.agenda_parse import openai_agenda, to_pretty_json, agenda_temp, create_motion_list
+from app.func_agenda.agenda_form_config import file_list_form_builder
+import csv
+from collections import namedtuple
+from wtforms import SubmitField
 
 async_mode = None
 socketio = SocketIO(app, async_mode=async_mode)
@@ -105,7 +109,7 @@ def register():
         return redirect(url_for('index'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data)
+        user = User(username=form.username.data, email=form.email.data, user_city=form.user_city.data)
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
@@ -127,6 +131,7 @@ def edit_profile():
     elif request.method == 'GET':
         form.username.data = current_user.username
         form.about_me.data = current_user.about_me
+        form.user_city.data = current_user.user_city
     return render_template('edit_profile.html', title='Edit Profile',
                            form=form)
 
@@ -229,27 +234,181 @@ def handle_upload():
     return render_template('process-agenda.html', filename=filename)
 
 
-def quick_processing_function():
-    return render_template('process-agenda.html'), True
-
-
-def long_processing_function(filename):
-    print("LP name: " + filename)
-    print('Start processing')
-    parsed_agenda = openai_agenda(filename)
-
-    return parsed_agenda
-
-
 @app.route('/process-agenda/<filename>')
 def process_agenda_function(filename):
 
-    agenda = openai_agenda(secure_filename(filename))
+    # agenda = openai_agenda(secure_filename(filename))
 
-    print(type(agenda))
+    agenda = {'meet_type': 'City Council Regular Meeting', 'date': 'April 4, 2023', 'time': '6:30 PM', 'location': 'Council Chambers', 'sections': [
+        {'number': 1, 'title': 'Call to Order',
+         'subitems': [{'number': 'A', 'title': 'Pledge of Allegiance and Land Acknowledgement'},
+                      {'number': 'B', 'title': 'Roll Call'},
+                      {'number': 'C', 'title': "Proclamation Recognizing April as Parkinson's Awareness Month"},
+                      {'number': 'D', 'title': 'Proclamation Recognizing April as Fair Housing Month'}]},
+        {'number': 2, 'title': 'Additions and Corrections to Agenda'}, {'number': 3, 'title': 'Consent Agenda',
+                                                                        'subitems': [{'number': 'A',
+                                                                                      'title': 'Approval of City Council Minutes',
+                                                                                      'subitems': [{'number': '1',
+                                                                                                    'title': 'Minutes of the Regular City Council Meeting of March 21, 2023'}]},
+                                                                                     {'number': 'B',
+                                                                                      'title': 'Approval of City Check Registers'},
+                                                                                     {'number': 'C',
+                                                                                      'title': 'Licenses', 'subitems': [
+                                                                                         {'number': '1',
+                                                                                          'title': 'General Business Licenses - Fireworks Sales'}]},
+                                                                                     {'number': 'D',
+                                                                                      'title': 'Bids, Quotes, and Contracts',
+                                                                                      'subitems': [{'number': '1',
+                                                                                                    'title': 'Approve Contract for Brush Pick-Up with Bratt Tree Company'},
+                                                                                                   {'number': '2',
+                                                                                                    'title': 'Approve Contract for Gate Valve Repairs with Valley Rich Co., Inc.'},
+                                                                                                   {'number': '3',
+                                                                                                    'title': 'Approve Purchase of Replacement Outdoor Hockey Rink Dasher Boards, Steel Components, and Fencing for Scheid Park'},
+                                                                                                   {'number': '4',
+                                                                                                    'title': 'Approve Independent Contractor and Court Rental Agreement with Twin City Tennis Camps'}]},
+                                                                                     {'number': 'E',
+                                                                                      'title': 'Adopt Resolution No. 23-017 Approving Amendment to Compensation and Classification Tables'},
+                                                                                     {'number': 'F',
+                                                                                      'title': 'Receive and File 2022 Pay Equity Report'}]},
+        {'number': 4, 'title': 'Public Hearing'}, {'number': 5, 'title': 'Old Business'},
+        {'number': 6, 'title': 'New Business', 'subitems': [{'number': 'A',
+                                                             'title': 'Second Consideration of Ordinance No. 761 Amending the 2023 Master Fee Schedule for Items Related to Micromobility Licenses'},
+                                                            {'number': 'B', 'title': 'Review of Council Calendar'},
+                                                            {'number': 'C', 'title': 'Mayor and Council Communications',
+                                                             'subitems': [{'number': '1',
+                                                                           'title': 'Other Committee/Meeting updates'}]}]},
+        {'number': 7, 'title': 'Adjournment'}]}
 
-
+    # print(agenda)
     return render_template('meeting-config.html', agenda=agenda)
+
+
+@app.route('/meeting10')
+def meeting10():
+    # City Council Regular Meeting
+    agenda = agenda_temp()
+    meet_type = agenda['meet_type']
+    meet_default = ""
+
+    # Set Meeting Type Field
+    meeting_type = db.session.query(EntityGroups).filter(EntityGroups.entity_code == current_user.user_city_code).all()
+    for mtypes in meeting_type:
+        if mtypes.group_type in meet_type:
+            meet_default = mtypes.group_code
+    meetings_list = [("", "Choose Meeting Type")]+[(i.group_code, i.group_type) for i in meeting_type]
+
+    # set members list
+    print(f'meet_type: {meet_type}')
+    print(f'City Code: {current_user.user_city_code}')
+
+    member_list = db.session.query(EntityMembers).filter(((EntityMembers.entity_code == current_user.user_city_code)
+                                                          & (EntityMembers.group_code == meet_default))).all()
+
+    for member in member_list:
+        print(f'Member: {member.member_last_name}')
+        full_name = f'{member.member_first_name} {member.member_last_name}'
+        data = {
+            'meet_type': meet_type,
+            'member_meet': [
+                ('1', 'Bill Bonigan'),
+                ('2', 'Regan Murphy'),
+                ('3', 'Jason Greenberg'),
+                ('4', 'Mia Parisian'),
+                ('5', 'Aaron Wagner'),
+            ]
+        }
+        # (member_load(member.id, full_name))
+        # member_list_pass.append(member_load(member.id, full_name))
+    print(f'Member List: {str(data)}')
+
+    form = UpdateAgendaForm(data=data)
+    # form.members_present = member_list_pass
+    # form = LargeAgendaForm(meet_type=meet_default, member_list_pass=member_list_pass)
+    # form.meet_type.choices = meetings_list
+
+    return render_template('meeting-10.html', agenda=agenda, form=form)
+
+
+@app.route('/meeting11', methods=['GET', 'POST'])
+def meeting11():
+    agenda = agenda_temp()
+    # Set Meeting Type Field
+    meet_type = agenda['meet_type']
+    meet_default = ""
+    meeting_type = db.session.query(EntityGroups).filter(EntityGroups.entity_code == current_user.user_city_code).all()
+    for mtypes in meeting_type:
+        if mtypes.group_type in meet_type:
+            meet_default = mtypes.group_code
+    meetings_list = [("", "Choose Meeting Type")] + [(i.group_code, i.group_type) for i in meeting_type]
+
+    # set members list
+    member_list = db.session.query(EntityMembers).filter(((EntityMembers.entity_code == current_user.user_city_code)
+                                                          & (EntityMembers.group_code == meet_default))).all()
+    members = []
+    member_select_list = ['Select Member', 'NA']
+    for member in member_list:
+        full_name = f'{member.member_first_name} {member.member_last_name}'
+        members.append(full_name)
+        member_select_list.append(full_name)
+
+    member_list = db.session.query(EntityMembers).filter(((EntityMembers.entity_code == current_user.user_city_code)
+                                                          & (EntityMembers.group_code == 'staff'))).all()
+    staff = []
+    for member in member_list:
+        full_name = f'{member.member_first_name} {member.member_last_name}'
+        staff.append(full_name)
+
+    motions_list = create_motion_list(agenda)
+
+    form, member_list_var = file_list_form_builder(members, meetings_list, meet_default, staff, motions_list, member_select_list)
+
+    if form.validate_on_submit():
+        members_present = []
+        staff_present = []
+        motion_callers = []
+        for var_name in form:
+            # print(var_name)
+            if not var_name.id == 'submit':
+                if 'checked' in str(var_name):
+                    if str(var_name.name) in member_list_var:
+                        members_present.append(var_name.name)
+                    else:
+                        staff_present.append(var_name.name)
+                if not var_name.data == 'Select Member':
+                    motion_callers.append({var_name.name: var_name.data})
+                    print(f'Var Name: {var_name.name} / Data: {var_name.data}')
+
+
+        print(members_present)
+        print(staff_present)
+
+    return render_template('meeting12.html', form=form, agenda=agenda, member_list_var=member_list_var,
+                           motions_list_var=motions_list, staff_list_var=staff)
+
+
+@app.route('/test_dict', methods=['GET', 'POST'])
+def test_dic():
+    agenda = agenda_temp()
+    motions_list = create_motion_list(agenda)
+    # print(motions_list)
+
+    for each_1 in motions_list:
+        # print(each_1)
+        ct = 0
+        for jj in each_1:
+            # for item in jj({i: i for i in range(10)}, 2):
+            #     print(item)
+            for key in jj:
+                print(f'{ct}, {key}')
+                if ct == 0:
+                    ct += 1
+                    print(f'Key1: {key}, {jj[key]}')
+                else:
+                    ct += 1
+                    print(f'Key2: {key}, {jj[key]}')
+
+
+    return 'Done'
 
 
 @app.route('/audioR', methods=['GET', 'POST'])
@@ -365,3 +524,37 @@ def on_close():
     # "This function is called when the connection has been closed."
 
     print("Closing Session")
+
+
+@app.route('/load_data')
+def load_data():
+
+    with open('app/files/rob_staff.csv', mode='r') as csv_file:
+        csv_reader = csv.DictReader(csv_file)
+        line_count = 0
+
+        for row in csv_reader:
+            print(row['entity_code'], row['member_last_name'], row['group_code'])
+
+            my_data = EntityMembers(entity_code=row['entity_code'],
+                                   group_code=row['group_code'],
+                                   member_first_name=row['member_first_name'],
+                                   member_last_name=row['member_last_name'],
+                                   title=row['title'],
+                                   position=row['position']
+                                  )
+
+            db.session.add(my_data)
+            db.session.commit()
+            line_count += 1
+
+    return render_template('data_complete.html', load_file_name='rob_members.csv')
+
+
+@app.route('/create_motion')
+def create_motion():
+
+    agenda = agenda_temp()
+    motions_list = create_motion_list(agenda)
+
+    return str(motions_list)
