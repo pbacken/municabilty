@@ -9,5 +9,3 @@ for each_section in agenda['sections']:
     if 'subitems' in each_section:
         for each_sub in each_section['subitems']:
             print(each_sub['number']+". "+each_sub['title'])
-
-# print(m_date, m_time, m_location)

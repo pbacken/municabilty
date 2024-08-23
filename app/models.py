@@ -17,6 +17,8 @@ class User(UserMixin, db.Model):
     email: so.Mapped[str] = so.mapped_column(sa.String(120), index=True,
                                              unique=True)
     password_hash: so.Mapped[Optional[str]] = so.mapped_column(sa.String(256))
+    user_city: so.Mapped[Optional[str]] = so.mapped_column(sa.String(64))
+    user_city_code: so.Mapped[Optional[str]] = so.mapped_column(sa.String(64))
     about_me: so.Mapped[Optional[str]] = so.mapped_column(sa.String(140))
     last_seen: so.Mapped[Optional[datetime]] = so.mapped_column(
         default=lambda: datetime.now(timezone.utc))
@@ -59,9 +61,29 @@ class MeetingInfo(db.Model):
     meeting_type: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
     meeting_date: so.Mapped[datetime] = so.mapped_column(sa.DATETIME, index=True)
     meeting_time: so.Mapped[datetime] = so.mapped_column(sa.DATETIME, index=True)
+    meeting_agenda: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
 
 
-    email: so.Mapped[str] = so.mapped_column(sa.String(120), index=True,
-                                             unique=True)
-    password_hash: so.Mapped[Optional[str]] = so.mapped_column(sa.String(256))
-    about_me: so.Mapped[Optional[str]] = so.mapped_column(sa.String(140))
+class EntityGroups(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    group_type: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    group_code: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    entity_code: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+
+
+class EntityMembers(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    group_code: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    member_first_name: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    member_last_name: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    entity_code: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    title: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    position: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+
+
+class EntityName(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    entity_name: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    entity_code: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+
+

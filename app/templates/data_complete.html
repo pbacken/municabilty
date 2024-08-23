@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+                    <header class="page-header page-header-dark bg-gradient-primary-to-secondary pb-10">
+                        <div class="container-xl px-4">
+                            <div class="page-header-content pt-4">
+                                <div class="row align-items-center justify-content-between">
+                                    <div class="col-auto mt-4">
+                                        <h1 class="page-header-title">
+                                            <div class="page-header-icon"><i data-feather="file-text"></i></div>
+                                            Data Loader
+                                        </h1>
+                                        <div class="page-header-subtitle"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+                    <!-- Main page content-->
+                    <div class="container-xl px-4 mt-n10">
+                        <div class="card">
+                            <div class="card-header">Data Loading is Complete</div>
+                            <div class="card-body">
+                                The file
+                                <code>{{ load_file_name }}</code>
+                                has been loaded to the database. You can find it on the Address List
+                                page.
+
+                            </div>
+                        </div>
+                    </div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+    {% block content %}
+        <div class="container bg-primary">
+            <div id="layoutAuthentication">
+                <div id="layoutAuthentication_content">
+                    <main>
+                        <div class="container-xl px-4">
+                            <div class="container">
+                              <!-- Content here -->
+                                <div class="row">
+                                    <div class="col">
+                                      <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                          <div class="card-body">
+                                            <h1 class="text-center">{{ current_user.user_city }}&nbsp{{ agenda['meet_type'] }}</h1>
+                                                <h4 class="text-center">{{ agenda['location'] }}</h4>
+                                                <h4 class="text-center">{{ agenda['date'] }}&nbsp{{ agenda['time'] }}</h4>
+                                                <br><br>
+                                                {% for each_section in agenda['sections'] %}
+                                                    {{ each_section['number'] }}. {{ each_section['title'] }} <br>
+                                                    {% if 'subitems' in each_section %}
+                                                        {% for each_sub in each_section['subitems'] %}
+                                                            &nbsp;&nbsp;&nbsp;{{ each_sub['number'] }}. {{ each_sub['title'] }}<br>
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                </br>
+                                                 {% endfor %}
+                                          </div>
+                                      </div>
+                                    </div>
+                                    <div class="col">
+                                      <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                          <div class="card-body">
+                                              {{ data }}
+                                              <hr><br>
+                                            <form action="" method="post" novalidate>
+                                                {{ form.hidden_tag() }}
+                                                <p>
+                                                {{ form.meet_type.label }}<br>
+                                                    {{ form.meet_type() }}
+                                                </p>
+                                                <p>
+                                                    {% for member in form.member_meet %}
+                                                        {{ member }}
+                                                    {% endfor %}
+                                                </p>
+                                            </form>
+                                            This is where the form goes.
+                                          </div>
+                                      </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </div>
+{% endblock %}

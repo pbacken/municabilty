@@ -10,13 +10,31 @@
                                     <!-- Basic login form-->
                                     <div class="card shadow-lg border-0 rounded-lg mt-5">
                                         <div class="card-header justify-content-center">
-                                            <h3 class="fw-light my-4">Process Agenda</h3>
+                                            <h3 class="fw-light my-4">{{ agenda['meet_type']  }}</h3>
                                         </div>
                                         <div class="card-body">
                                             <div class="bg-white p-5 rounded shadow-sm border">
                                             <!-- Content Here -->
-                                                {{ agenda }}
+                                                <h1 class="text-center">{{ current_user.user_city }}&nbsp{{ agenda['meet_type'] }}</h1>
+                                                <h4 class="text-center">{{ agenda['location'] }}</h4>
+                                                <h4 class="text-center">{{ agenda['date'] }}&nbsp{{ agenda['time'] }}</h4>
+                                                <br><br>
+                                                {% for each_section in agenda['sections'] %}
+                                                    {{ each_section['number'] }}. {{ each_section['title'] }} <br>
+                                                    {% if 'subitems' in each_section %}
+                                                        {% for each_sub in each_section['subitems'] %}
+                                                            &nbsp;&nbsp;&nbsp;{{ each_sub['number'] }}. {{ each_sub['title'] }}<br>
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                </br>
+                                                 {% endfor %}
                                             </div>
+                                            <br>
+                                            <div class="col-md-12 text-right">
+                                                <button type="button" class="btn btn-primary">Start Recording</button>
+                                                <button type="button" class="btn btn-secondary">Close</button>
+                                            </div>
+                                            <br>More stuff here
                                         </div>
                                     </div>
                                 </div>
