@@ -61,10 +61,9 @@ def before_request():
 
 @app.route('/')
 @app.route('/index')
-@login_required
 def index():
-    # form = MeetingForm()
     return render_template('index.html', title='Home')
+    # return render_template('comingsoon.html', title='CivicHub')
 
 
 @app.route('/login', methods=['GET', 'POST'])
