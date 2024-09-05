@@ -188,16 +188,16 @@ def csrf_error(e):
     return e.description, 400
 
 
-@app.route('/create_meeting')
+@app.route('/create_meeting_old')
 @login_required
 def create_meeting_2():
     form = MeetingForm()
-    return render_template('meeting2.html', title='Create Meeting', form=form)
+    return render_template('meeting.html', title='Create Meeting', form=form)
 
 
-@app.route('/create_meeting', methods=['POST'])
+@app.route('/create_meeting_old', methods=['POST'])
 @login_required
-def create_meeting():
+def create_meeting_old():
 
     uploaded_file = request.files['file']
     filename = secure_filename(uploaded_file.filename)
@@ -211,12 +211,11 @@ def create_meeting():
     return redirect(url_for('index'))
 
 
-@app.route('/create_meeting_3', methods=['GET'])
+@app.route('/create_meeting', methods=['GET'])
 @login_required
-def create_meeting_3():
-    print(app.config['DROPZONE_DEFAULT_MESSAGE'])
+def create_meeting():
 
-    return render_template('meeting3.html', title='Create Meeting')
+    return render_template('meeting.html', title='Create Meeting')
     # return render_template('dz_test.html', title='Create Meeting')
 
 
@@ -226,6 +225,7 @@ def handle_upload():
 
     f = request.files.get('file')
     filename = secure_filename(f.filename)
+
     if filename != '':
         f.save(os.path.join(app.config['UPLOAD_PATH'], filename))
 
@@ -235,7 +235,8 @@ def handle_upload():
 
 @app.route('/process-agenda/<filename>')
 def process_agenda_function(filename):
-
+    print(current_user.user_city)
+    print("Start Agenda Processing")
     # agenda = openai_agenda(secure_filename(filename))
 
     agenda = {'meet_type': 'City Council Regular Meeting', 'date': 'April 4, 2023', 'time': '6:30 PM', 'location': 'Council Chambers', 'sections': [
@@ -277,9 +278,16 @@ def process_agenda_function(filename):
                                                              'subitems': [{'number': '1',
                                                                            'title': 'Other Committee/Meeting updates'}]}]},
         {'number': 7, 'title': 'Adjournment'}]}
+    
+    print('agenda done')
+    print(datetime.strptime(agenda['date'], '%B %d, %Y'))
+    print(agenda['meet_type'])
+    f = open(f"{filename}_agenda.txt", "w")
+    f.write(str(agenda))
+    f.close()
+    print("File Written")
 
-    # print(agenda)
-    return render_template('meeting-config.html', agenda=agenda)
+    return redirect('meeting12.html', agenda=agenda)
 
 
 @app.route('/meeting10')
@@ -328,12 +336,16 @@ def meeting10():
     return render_template('meeting-10.html', agenda=agenda, form=form)
 
 
-@app.route('/meeting11', methods=['GET', 'POST'])
-def meeting11():
+# @app.route('/meeting_process/<agenda>', methods=['GET', 'POST'])
+# def meeting_process(agenda):
+@app.route('/meeting_process', methods=['GET', 'POST'])
+def meeting_process():
     agenda = agenda_temp()
     # Set Meeting Type Field
     meet_type = agenda['meet_type']
     meet_default = ""
+
+    # set meeting types
     meeting_type = db.session.query(EntityGroups).filter(EntityGroups.entity_code == current_user.user_city_code).all()
     for mtypes in meeting_type:
         if mtypes.group_type in meet_type:
@@ -357,29 +369,36 @@ def meeting11():
         full_name = f'{member.member_first_name} {member.member_last_name}'
         staff.append(full_name)
 
-    motions_list = create_motion_list(agenda)
-
+    full_motions_list, motions_list = create_motion_list(agenda)
+    # form = UpdateAgendaForm()
     form, member_list_var = file_list_form_builder(members, meetings_list, meet_default, staff, motions_list, member_select_list)
 
+    # for dd in motions_list:
+    #    print(f"Motion: {dd}")
+
     if form.validate_on_submit():
+        print(f'Validate: {motions_list}')
         members_present = []
         staff_present = []
         motion_callers = []
         for var_name in form:
-            # print(var_name)
             if not var_name.id == 'submit':
+                # print(f'Name: {var_name.name} / Data: {var_name.data}')
                 if 'checked' in str(var_name):
                     if str(var_name.name) in member_list_var:
                         members_present.append(var_name.name)
                     else:
                         staff_present.append(var_name.name)
-                if not var_name.data == 'Select Member':
-                    motion_callers.append({var_name.name: var_name.data})
-                    print(f'Var Name: {var_name.name} / Data: {var_name.data}')
-
+                if var_name.name in full_motions_list:
+                    # print(f'Var Name: {var_name.name} / Data: {var_name.data}')
+                    if not var_name.data == 'Select Member' or var_name.data == 'NA':
+                        motion_callers.append({var_name.name: var_name.data})
+                        # print(f'Var Name: {var_name.name} / Data: {var_name.data}')
 
         print(members_present)
         print(staff_present)
+        print(motion_callers)
+        return render_template('index.html')
 
     return render_template('meeting12.html', form=form, agenda=agenda, member_list_var=member_list_var,
                            motions_list_var=motions_list, staff_list_var=staff)
@@ -405,7 +424,6 @@ def test_dic():
                 else:
                     ct += 1
                     print(f'Key2: {key}, {jj[key]}')
-
 
     return 'Done'
 

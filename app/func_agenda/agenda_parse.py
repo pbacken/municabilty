@@ -106,7 +106,7 @@ def openai_agenda(agenda_doc):
             {"role": "user",
              "content": "You are a city clerk assistant, create an agenda from the following text. " +
                         "include meeting type labeled 'meet_type' " +
-                        "include date labeled 'date', time labeled 'time', location labeled 'location' " +
+                        "include date formatted Month Date, Year and labeled 'date', time in Standard time and labeled 'time', location labeled 'location' " +
                         "label parent item for main topics as 'sections' " +
                         "label main topics with 'number' and a digit starting at 1. and topics labeled 'title' " +
                         "label subitem section as 'subitems', " +
@@ -136,12 +136,13 @@ def agenda_form(agenda):
 
 
 def create_motion_list(agenda):
-    # motion_list = []
+    motion_list = []
     motion_list_2 = []
     master_list = ['Old Business', 'New Business', 'Adjournment', 'Public Hearing', 'Regular Agenda', 'Approval Meeting Agenda']
 
     # meetings_list = [("", "Choose Meeting Type")] + [(i.group_code, i.group_type) for i in meeting_type]
-    # motion_list.append('Consent Agenda')
+    motion_list.append('ca')
+    motion_list.append('ca_2')
     motion_list_2.append([{'ca': 'Consent Agenda', 'ca_2': 'Consent Agenda'}])
 
     for each_section in agenda['sections']:
@@ -149,14 +150,16 @@ def create_motion_list(agenda):
         if each_section['title'] in master_list:
             if 'subitems' in each_section:
                 for each_sub in each_section['subitems']:
+                    motion_list.append(str(each_section['number']) + str(each_sub['number']))
+                    motion_list.append(str(each_section['number']) + str(each_sub['number']+'_2'))
                     motion_list_2.append([{str(each_section['number']) + str(each_sub['number']): each_sub['title']},
                                           {str(each_section['number']) + str(each_sub['number']+'_2'): each_sub['title']}])
-                    # motion_list.append(str(each_section['number']) + str(each_sub['number']) + ". " + each_sub['title'])
-                    # print(each_sub['number'] + ". " + each_sub['title'])
-    # motion_list.append('Adjournment')
+
+    motion_list.append('adj')
+    motion_list.append('adj_2')
     motion_list_2.append([{'adj': 'Adjournment', 'adj_2': 'Adjournment'}])
 
-    return motion_list_2
+    return motion_list, motion_list_2
 
 
 
