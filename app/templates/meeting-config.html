@@ -17,7 +17,8 @@
                                             <!-- Content Here -->
                                                 <h1 class="text-center">{{ current_user.user_city }}&nbsp{{ agenda['meet_type'] }}</h1>
                                                 <h4 class="text-center">{{ agenda['location'] }}</h4>
-                                                <h4 class="text-center">{{ agenda['date'] }}&nbsp{{ agenda['time'] }}</h4>
+                                                <h4 class="text-center">{{ agenda['date'] }}</h4>
+                                                <h4 class="text-center">{{ agenda['time'] }}</h4>
                                                 <br><br>
                                                 {% for each_section in agenda['sections'] %}
                                                     {{ each_section['number'] }}. {{ each_section['title'] }} <br>

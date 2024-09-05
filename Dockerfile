@@ -1,9 +1,11 @@
 FROM python:slim
 
+RUN pip install gunicorn pymysql cryptography
+RUN apt update -y
+RUN apt install portaudio19-dev gcc -y
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
-RUN pip install gunicorn pymysql cryptography
-RUN apt install portaudio19-dev
+
 
 COPY app app
 COPY migrations migrations

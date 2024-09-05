@@ -34,8 +34,8 @@ if not app.debug:
             secure = ()
         mail_handler = SMTPHandler(
             mailhost=(app.config['MAIL_SERVER'], app.config['MAIL_PORT']),
-            fromaddr='pat@clevercobra.com',
-            toaddrs=app.config['ADMINS'], subject='Sunfish Failure',
+            fromaddr='admin@civichub.tech',
+            toaddrs=app.config['ADMINS'], subject='CivicHub Failure',
             credentials=auth, secure=secure)
         mail_handler.setLevel(logging.ERROR)
         app.logger.addHandler(mail_handler)
