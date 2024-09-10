@@ -293,10 +293,10 @@ def meeting_process(agenda_id):
         full_name = f'{member.member_first_name} {member.member_last_name}'
         staff.append(full_name)
 
-    full_motions_list, motions_list, full_consent_list, consent_list = create_motion_list(agenda)
-    # motion_list, motion_list_2, consent_list, consent_list_2
-    form, member_list_var = file_list_form_builder(members, meetings_list, meet_default, staff, motions_list,
-                                                   member_select_list, consent_list)
+    motion_list_labels, motion_list_full, consent_list_labels, consent_list_full, ml_sm, cl_sm = create_motion_list(agenda)
+    print(motion_list_full)
+    form, member_list_var = file_list_form_builder(members, meetings_list, meet_default, staff, motion_list_full,
+                                                   member_select_list, consent_list_full)
 
     if form.validate_on_submit():
         members_list = []
@@ -313,7 +313,7 @@ def meeting_process(agenda_id):
                 else:
                     if str(var_name.name) in member_list_var:
                         members_list.append(f"{var_name.name} (absent)")
-                if var_name.name in full_motions_list or var_name.name in full_consent_list:
+                if var_name.name in motion_list_labels or var_name.name in consent_list_labels:
                     if not var_name.data == 'Select Member' or var_name.data == 'NA':
                         motion_callers[var_name.id] = var_name.data
 
@@ -321,15 +321,15 @@ def meeting_process(agenda_id):
         # sp = json.dumps(staff_present)
         # mc = json.dumps(motion_callers)
 
-        print(members_list)
-        print(staff_present)
-        print(motion_callers)
-        print(member_titles)
+        # print(members_list)
+        # print(staff_present)
+        print(f"Motion Callers: {motion_callers}")
+        # print(member_titles)
         return render_template('index.html')
 
     return render_template('meeting12.html', form=form, agenda=agenda, member_list_var=member_list_var,
-                           motions_list_var=motions_list, staff_list_var=staff, agenda_id=agenda_id,
-                           consent_list_var=consent_list)
+                           motions_list_var=motion_list_full, staff_list_var=staff, agenda_id=agenda_id,
+                           consent_list_var=consent_list_full)
 
 
 @app.route('/test_dict', methods=['GET', 'POST'])

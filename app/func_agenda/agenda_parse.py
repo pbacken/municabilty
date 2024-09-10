@@ -99,55 +99,55 @@ def agenda_form(agenda):
 
 
 def create_motion_list(agenda):
-    motion_list = []
-    motion_list_2 = []
+    motion_list_labels = []
+    motion_list_full = []
     ml_sm = {}
-    consent_list = []
-    consent_list_2 = []
+    consent_list_labels = []
+    consent_list_full = []
     cl_sm = {}
 
-    master_list = ['approval of the', 'consent agenda', 'public hearing', 'public hearings',
+    section_master_list = ['approval of the', 'consent agenda', 'public hearings',
                    'old business', 'new business', 'other business', 'adjournment']
 
     # meetings_list = [("", "Choose Meeting Type")] + [(i.group_code, i.group_type) for i in meeting_type]
-    # motion_list.append('ca')
-    # motion_list.append('ca_2')
-    # motion_list_2.append([{'ca': 'Consent Agenda', 'ca_2': 'Consent Agenda'}])
-    # ml_sm["Consent Agenda"] = ""
 
     for each_section in agenda['sections']:
-        print(each_section['title'].casefold())
-        if each_section['title'].casefold() in master_list:
-            if 'subitems' in each_section:
-                if each_section['title'].casefold() in 'consent agenda':
-                    for each_sub in each_section['subitems']:
-                        consent_list.append(str(each_section['number']) + str(each_sub['number']))
-                        consent_list.append(str(each_section['number']) + str(each_sub['number']+'_2'))
-                        consent_list_2.append(
-                            [{str(each_section['number']) + str(each_sub['number']): each_sub['title']},
-                             {str(each_section['number']) + str(each_sub['number'] + '_2'): each_sub['title']}])
+        for master in section_master_list:
+            if master in each_section['title'].casefold():
+                if 'subitems' in each_section:
+                    if each_section['title'].casefold() in 'consent agenda':
+                        cl_sm_list = []
+                        for each_sub in each_section['subitems']:
+                            consent_list_labels.append(str(each_section['number']) + str(each_sub['number']))
+                            consent_list_labels.append(str(each_section['number']) + str(each_sub['number']+'_2'))
+                            consent_list_full.append(
+                                [{str(each_section['number']) + str(each_sub['number']): each_sub['title']},
+                                 {str(each_section['number']) + str(each_sub['number'] + '_2'): each_sub['title']}])
+                            cl_sm_list.append(f"{each_section['number']}{each_sub['number']}")
+                        cl_sm[each_section['title'].casefold()] = cl_sm_list
+                    else:
+                        for each_sub in each_section['subitems']:
+                            ml_sm_list = []
+                            if not each_sub['title'].casefold() == 'none':
+                                motion_list_labels.append(str(each_section['number']) + str(each_sub['number']))
+                                motion_list_labels.append(str(each_section['number']) + str(each_sub['number']+'_2'))
+                                motion_list_full.append([{str(each_section['number']) + str(each_sub['number']): each_sub['title']},
+                                                      {str(each_section['number']) + str(each_sub['number']+'_2'): each_sub['title']}])
+                                ml_sm_list.append(f"{each_section['number']}{each_sub['number']}")
+                        ml_sm[each_section['title'].casefold()] = ml_sm_list
                 else:
-                    for each_sub in each_section['subitems']:
-                        if not each_sub['title'].casefold() == 'none':
-                            motion_list.append(str(each_section['number']) + str(each_sub['number']))
-                            motion_list.append(str(each_section['number']) + str(each_sub['number']+'_2'))
-                            motion_list_2.append([{str(each_section['number']) + str(each_sub['number']): each_sub['title']},
-                                                  {str(each_section['number']) + str(each_sub['number']+'_2'): each_sub['title']}])
+                    ml_sm_list = []
+                    motion_list_labels.append(str(each_section['number']))
+                    motion_list_labels.append(str(each_section['number']) + '_2')
+                    motion_list_full.append([{str(each_section['number']): each_section['title']},
+                                             {str(each_section['number']) + '_2': each_section[
+                                                 'title']}])
+                    ml_sm_list.append(f"{each_section['number']}")
+                    ml_sm[each_section['title'].casefold()] = ml_sm_list
 
-    motion_list.append('adj')
-    motion_list.append('adj_2')
-    motion_list_2.append([{'adj': 'Adjournment', 'adj_2': 'Adjournment'}])
-
-    """
-    {'Consent Agenda': 'ca',
-     'Second Consideration of Ordinance No. 761 Amending the 2023 Master Fee Schedule for Items Related to Micromobility Licenses': '6A',
-     'Review of Council Calendar': '6B',
-     'Mayor and Council Communications': '6C',
-     'Adjournment': 'adj'}
-    """
-    # print(motion_list_2)
-    # print(consent_list_2)
-    return motion_list, motion_list_2, consent_list, consent_list_2
+    print(f"ML: {ml_sm}")
+    print(f"CL: {cl_sm}")
+    return motion_list_labels, motion_list_full, consent_list_labels, consent_list_full, ml_sm, cl_sm
 
 
 def to_pretty_json(value):
