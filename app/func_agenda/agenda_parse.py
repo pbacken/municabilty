@@ -2,52 +2,13 @@ import pdfplumber
 import openai
 import re
 import json
+from app import app
+from flask_login import current_user
 from collections import defaultdict
 
 
 def agenda_temp():
-    agenda = {'meet_type': 'City Council Regular Meeting', 'date': 'April 4, 2023', 'time': '6:30 PM',
-              'location': 'Council Chambers', 'sections': [
-            {'number': 1, 'title': 'Call to Order',
-             'subitems': [{'number': 'A', 'title': 'Pledge of Allegiance and Land Acknowledgement'},
-                          {'number': 'B', 'title': 'Roll Call'},
-                          {'number': 'C', 'title': "Proclamation Recognizing April as Parkinson's Awareness Month"},
-                          {'number': 'D', 'title': 'Proclamation Recognizing April as Fair Housing Month'}]},
-            {'number': 2, 'title': 'Additions and Corrections to Agenda'}, {'number': 3, 'title': 'Consent Agenda',
-                                                                            'subitems': [{'number': 'A',
-                                                                                          'title': 'Approval of City Council Minutes',
-                                                                                          'subitems': [{'number': '1',
-                                                                                                        'title': 'Minutes of the Regular City Council Meeting of March 21, 2023'}]},
-                                                                                         {'number': 'B',
-                                                                                          'title': 'Approval of City Check Registers'},
-                                                                                         {'number': 'C',
-                                                                                          'title': 'Licenses',
-                                                                                          'subitems': [
-                                                                                              {'number': '1',
-                                                                                               'title': 'General Business Licenses - Fireworks Sales'}]},
-                                                                                         {'number': 'D',
-                                                                                          'title': 'Bids, Quotes, and Contracts',
-                                                                                          'subitems': [{'number': '1',
-                                                                                                        'title': 'Approve Contract for Brush Pick-Up with Bratt Tree Company'},
-                                                                                                       {'number': '2',
-                                                                                                        'title': 'Approve Contract for Gate Valve Repairs with Valley Rich Co., Inc.'},
-                                                                                                       {'number': '3',
-                                                                                                        'title': 'Approve Purchase of Replacement Outdoor Hockey Rink Dasher Boards, Steel Components, and Fencing for Scheid Park'},
-                                                                                                       {'number': '4',
-                                                                                                        'title': 'Approve Independent Contractor and Court Rental Agreement with Twin City Tennis Camps'}]},
-                                                                                         {'number': 'E',
-                                                                                          'title': 'Adopt Resolution No. 23-017 Approving Amendment to Compensation and Classification Tables'},
-                                                                                         {'number': 'F',
-                                                                                          'title': 'Receive and File 2022 Pay Equity Report'}]},
-            {'number': 4, 'title': 'Public Hearing'}, {'number': 5, 'title': 'Old Business'},
-            {'number': 6, 'title': 'New Business', 'subitems': [{'number': 'A',
-                                                                 'title': 'Second Consideration of Ordinance No. 761 Amending the 2023 Master Fee Schedule for Items Related to Micromobility Licenses'},
-                                                                {'number': 'B', 'title': 'Review of Council Calendar'},
-                                                                {'number': 'C',
-                                                                 'title': 'Mayor and Council Communications',
-                                                                 'subitems': [{'number': '1',
-                                                                               'title': 'Other Committee/Meeting updates'}]}]},
-            {'number': 7, 'title': 'Adjournment'}]}
+    agenda = {"meet_type": "City Council Meeting", "date": "September 3, 2024", "time": "7:00 PM", "location": "4100 Lakeview Avenue North, Robbinsdale, MN", "sections": [{"number": 1, "title": "CITY COUNCIL MEETING CALLED TO ORDER"}, {"number": 2, "title": "ROLL CALL", "subitems": [{"number": "A", "title": "Wagner"}, {"number": "B", "title": "Murphy"}, {"number": "C", "title": "Greenberg"}, {"number": "D", "title": "Parisian"}, {"number": "E", "title": "Mayor Blonigan"}]}, {"number": 3, "title": "MICROPHONE CHECK", "subitems": [{"number": "A", "title": "Wagner"}, {"number": "B", "title": "Murphy"}, {"number": "C", "title": "Greenberg"}, {"number": "D", "title": "Parisian"}, {"number": "E", "title": "Mayor Blonigan"}]}, {"number": 4, "title": "OPPORTUNITY FOR THE PUBLIC TO ADDRESS THE CITY COUNCIL ON MATTERS NOT ON THE AGENDA"}, {"number": 5, "title": "APPROVAL OF THE SEPTEMBER 3, 2024 MEETING AGENDA"}, {"number": 6, "title": "CONSENT AGENDA", "subitems": [{"number": "A", "title": "Approve Special City Council Meeting minutes from July 9, 2024"}, {"number": "B", "title": "Receive Parks, Recreation, and Forestry Commission minutes from June 25, 2024"}, {"number": "C", "title": "Deputy Registrar\u2019s Monthly Financial Statements"}, {"number": "D", "title": "Robbinsdale Wine & Spirits\u2019 Monthly Financial Statements"}, {"number": "E", "title": "Quarterly Financial Information for General, Water, Sanitary Sewer, Storm Sewer, and Solid Waste"}, {"number": "F", "title": "Scheduling Public Hearing on October 1, 2024, to Certify the Assessment Roll for Unpaid Administrative Penalties"}, {"number": "G", "title": "Scheduling Public Hearing on October 1, 2024, to Certify the Assessment Roll for Delinquent Utilities"}, {"number": "H", "title": "Scheduling Public Hearing on October 1, 2024, to Certify the Assessment Roll for Emergency Water, Sewer, and Sump Pump Repairs"}, {"number": "I", "title": "Approval of Licenses"}, {"number": "J", "title": "UNCF Walk for Education"}, {"number": "K", "title": "Faith Chapel Event"}]}, {"number": 7, "title": "PRESENTATIONS", "subitems": [{"number": "A", "title": "LMC Legislators of Distinction - Senator Rest, Representative Freiberg"}]}, {"number": 8, "title": "PUBLIC HEARINGS", "subitems": [{"number": "A", "title": "Public Hearing to receive feedback on the Blue Line Light Rail Extension"}]}, {"number": 9, "title": "OLD BUSINESS", "subitems": [{"number": "A", "title": "Consider Consumption and Display Permit for 4130 Lakeland"}]}, {"number": 10, "title": "NEW BUSINESS", "subitems": [{"number": "A", "title": "None"}]}, {"number": 11, "title": "OTHER BUSINESS", "subitems": [{"number": "A", "title": "Voucher Requests Pending Approval for Disbursement"}]}, {"number": 12, "title": "ADMINISTRATIVE REPORTS"}, {"number": 13, "title": "COUNCIL GENERAL COMMUNICATIONS"}, {"number": 14, "title": "ADJOURNMENT"}]}
 
     return agenda
 
@@ -89,13 +50,15 @@ def openai_agenda(agenda_doc):
     client = openai.OpenAI()
 
     text_extract = ""
-    with pdfplumber.open("app/files/{}".format(agenda_doc)) as pdf:
+    new_path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/{agenda_doc}"
+    with pdfplumber.open(new_path.format(agenda_doc)) as pdf:
         for page in pdf.pages:
             # print(page.page_number)
             if page.page_number < 4:
                 text_extract += page.extract_text()
 
         print("PDF read done.")
+
         # print(text_extract)
 
     completion = client.chat.completions.create(
@@ -138,30 +101,53 @@ def agenda_form(agenda):
 def create_motion_list(agenda):
     motion_list = []
     motion_list_2 = []
-    master_list = ['Old Business', 'New Business', 'Adjournment', 'Public Hearing', 'Regular Agenda', 'Approval Meeting Agenda']
+    ml_sm = {}
+    consent_list = []
+    consent_list_2 = []
+    cl_sm = {}
+
+    master_list = ['approval of the', 'consent agenda', 'public hearing', 'public hearings',
+                   'old business', 'new business', 'other business', 'adjournment']
 
     # meetings_list = [("", "Choose Meeting Type")] + [(i.group_code, i.group_type) for i in meeting_type]
-    motion_list.append('ca')
-    motion_list.append('ca_2')
-    motion_list_2.append([{'ca': 'Consent Agenda', 'ca_2': 'Consent Agenda'}])
+    # motion_list.append('ca')
+    # motion_list.append('ca_2')
+    # motion_list_2.append([{'ca': 'Consent Agenda', 'ca_2': 'Consent Agenda'}])
+    # ml_sm["Consent Agenda"] = ""
 
     for each_section in agenda['sections']:
-        # print(str(each_section['number']) + ". " + each_section['title'])
-        if each_section['title'] in master_list:
+        print(each_section['title'].casefold())
+        if each_section['title'].casefold() in master_list:
             if 'subitems' in each_section:
-                for each_sub in each_section['subitems']:
-                    motion_list.append(str(each_section['number']) + str(each_sub['number']))
-                    motion_list.append(str(each_section['number']) + str(each_sub['number']+'_2'))
-                    motion_list_2.append([{str(each_section['number']) + str(each_sub['number']): each_sub['title']},
-                                          {str(each_section['number']) + str(each_sub['number']+'_2'): each_sub['title']}])
+                if each_section['title'].casefold() in 'consent agenda':
+                    for each_sub in each_section['subitems']:
+                        consent_list.append(str(each_section['number']) + str(each_sub['number']))
+                        consent_list.append(str(each_section['number']) + str(each_sub['number']+'_2'))
+                        consent_list_2.append(
+                            [{str(each_section['number']) + str(each_sub['number']): each_sub['title']},
+                             {str(each_section['number']) + str(each_sub['number'] + '_2'): each_sub['title']}])
+                else:
+                    for each_sub in each_section['subitems']:
+                        if not each_sub['title'].casefold() == 'none':
+                            motion_list.append(str(each_section['number']) + str(each_sub['number']))
+                            motion_list.append(str(each_section['number']) + str(each_sub['number']+'_2'))
+                            motion_list_2.append([{str(each_section['number']) + str(each_sub['number']): each_sub['title']},
+                                                  {str(each_section['number']) + str(each_sub['number']+'_2'): each_sub['title']}])
 
     motion_list.append('adj')
     motion_list.append('adj_2')
     motion_list_2.append([{'adj': 'Adjournment', 'adj_2': 'Adjournment'}])
 
-    return motion_list, motion_list_2
-
-
+    """
+    {'Consent Agenda': 'ca',
+     'Second Consideration of Ordinance No. 761 Amending the 2023 Master Fee Schedule for Items Related to Micromobility Licenses': '6A',
+     'Review of Council Calendar': '6B',
+     'Mayor and Council Communications': '6C',
+     'Adjournment': 'adj'}
+    """
+    # print(motion_list_2)
+    # print(consent_list_2)
+    return motion_list, motion_list_2, consent_list, consent_list_2
 
 
 def to_pretty_json(value):

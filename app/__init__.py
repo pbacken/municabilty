@@ -10,9 +10,11 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_dropzone import Dropzone
 from flask_wtf.csrf import CSRFProtect, CSRFError
+from flask_uuid import FlaskUUID
 
 
 app = Flask(__name__)
+FlaskUUID(app)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)

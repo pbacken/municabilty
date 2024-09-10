@@ -2,6 +2,7 @@ import json
 
 import sqlalchemy as sa
 import os
+import uuid
 from app import app, db
 from app.email import send_password_reset_email
 from app.forms import LoginForm, RegistrationForm, EditProfileForm, ResetPasswordRequestForm, \
@@ -225,9 +226,12 @@ def handle_upload():
 
     f = request.files.get('file')
     filename = secure_filename(f.filename)
+    new_path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}"
 
     if filename != '':
-        f.save(os.path.join(app.config['UPLOAD_PATH'], filename))
+        if not os.path.exists(new_path):
+            os.makedirs(new_path)
+        f.save(os.path.join(new_path, filename))
 
     # return '', 204
     return render_template('process-agenda.html', filename=filename)
@@ -235,112 +239,29 @@ def handle_upload():
 
 @app.route('/process-agenda/<filename>')
 def process_agenda_function(filename):
-    print(current_user.user_city)
-    print("Start Agenda Processing")
+    new_path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/json"
+    jsonuuid = uuid.uuid4()
+
+    agenda = agenda_temp()
     # agenda = openai_agenda(secure_filename(filename))
 
-    agenda = {'meet_type': 'City Council Regular Meeting', 'date': 'April 4, 2023', 'time': '6:30 PM', 'location': 'Council Chambers', 'sections': [
-        {'number': 1, 'title': 'Call to Order',
-         'subitems': [{'number': 'A', 'title': 'Pledge of Allegiance and Land Acknowledgement'},
-                      {'number': 'B', 'title': 'Roll Call'},
-                      {'number': 'C', 'title': "Proclamation Recognizing April as Parkinson's Awareness Month"},
-                      {'number': 'D', 'title': 'Proclamation Recognizing April as Fair Housing Month'}]},
-        {'number': 2, 'title': 'Additions and Corrections to Agenda'}, {'number': 3, 'title': 'Consent Agenda',
-                                                                        'subitems': [{'number': 'A',
-                                                                                      'title': 'Approval of City Council Minutes',
-                                                                                      'subitems': [{'number': '1',
-                                                                                                    'title': 'Minutes of the Regular City Council Meeting of March 21, 2023'}]},
-                                                                                     {'number': 'B',
-                                                                                      'title': 'Approval of City Check Registers'},
-                                                                                     {'number': 'C',
-                                                                                      'title': 'Licenses', 'subitems': [
-                                                                                         {'number': '1',
-                                                                                          'title': 'General Business Licenses - Fireworks Sales'}]},
-                                                                                     {'number': 'D',
-                                                                                      'title': 'Bids, Quotes, and Contracts',
-                                                                                      'subitems': [{'number': '1',
-                                                                                                    'title': 'Approve Contract for Brush Pick-Up with Bratt Tree Company'},
-                                                                                                   {'number': '2',
-                                                                                                    'title': 'Approve Contract for Gate Valve Repairs with Valley Rich Co., Inc.'},
-                                                                                                   {'number': '3',
-                                                                                                    'title': 'Approve Purchase of Replacement Outdoor Hockey Rink Dasher Boards, Steel Components, and Fencing for Scheid Park'},
-                                                                                                   {'number': '4',
-                                                                                                    'title': 'Approve Independent Contractor and Court Rental Agreement with Twin City Tennis Camps'}]},
-                                                                                     {'number': 'E',
-                                                                                      'title': 'Adopt Resolution No. 23-017 Approving Amendment to Compensation and Classification Tables'},
-                                                                                     {'number': 'F',
-                                                                                      'title': 'Receive and File 2022 Pay Equity Report'}]},
-        {'number': 4, 'title': 'Public Hearing'}, {'number': 5, 'title': 'Old Business'},
-        {'number': 6, 'title': 'New Business', 'subitems': [{'number': 'A',
-                                                             'title': 'Second Consideration of Ordinance No. 761 Amending the 2023 Master Fee Schedule for Items Related to Micromobility Licenses'},
-                                                            {'number': 'B', 'title': 'Review of Council Calendar'},
-                                                            {'number': 'C', 'title': 'Mayor and Council Communications',
-                                                             'subitems': [{'number': '1',
-                                                                           'title': 'Other Committee/Meeting updates'}]}]},
-        {'number': 7, 'title': 'Adjournment'}]}
-    
     print('agenda done')
-    print(datetime.strptime(agenda['date'], '%B %d, %Y'))
-    print(agenda['meet_type'])
-    f = open(f"{filename}_agenda.txt", "w")
-    f.write(str(agenda))
+
+    if not os.path.exists(new_path):
+        os.makedirs(new_path)
+    f = open(f"{new_path}/{jsonuuid}.txt", "w")
+    f.write(json.dumps(agenda))
     f.close()
     print("File Written")
-
-    return redirect('meeting12.html', agenda=agenda)
-
-
-@app.route('/meeting10')
-def meeting10():
-    # City Council Regular Meeting
-    agenda = agenda_temp()
-    meet_type = agenda['meet_type']
-    meet_default = ""
-
-    # Set Meeting Type Field
-    meeting_type = db.session.query(EntityGroups).filter(EntityGroups.entity_code == current_user.user_city_code).all()
-    for mtypes in meeting_type:
-        if mtypes.group_type in meet_type:
-            meet_default = mtypes.group_code
-    meetings_list = [("", "Choose Meeting Type")]+[(i.group_code, i.group_type) for i in meeting_type]
-
-    # set members list
-    print(f'meet_type: {meet_type}')
-    print(f'City Code: {current_user.user_city_code}')
-
-    member_list = db.session.query(EntityMembers).filter(((EntityMembers.entity_code == current_user.user_city_code)
-                                                          & (EntityMembers.group_code == meet_default))).all()
-
-    for member in member_list:
-        print(f'Member: {member.member_last_name}')
-        full_name = f'{member.member_first_name} {member.member_last_name}'
-        data = {
-            'meet_type': meet_type,
-            'member_meet': [
-                ('1', 'Bill Bonigan'),
-                ('2', 'Regan Murphy'),
-                ('3', 'Jason Greenberg'),
-                ('4', 'Mia Parisian'),
-                ('5', 'Aaron Wagner'),
-            ]
-        }
-        # (member_load(member.id, full_name))
-        # member_list_pass.append(member_load(member.id, full_name))
-    print(f'Member List: {str(data)}')
-
-    form = UpdateAgendaForm(data=data)
-    # form.members_present = member_list_pass
-    # form = LargeAgendaForm(meet_type=meet_default, member_list_pass=member_list_pass)
-    # form.meet_type.choices = meetings_list
-
-    return render_template('meeting-10.html', agenda=agenda, form=form)
+    return redirect(url_for('meeting_process', agenda_id=jsonuuid))
 
 
-# @app.route('/meeting_process/<agenda>', methods=['GET', 'POST'])
-# def meeting_process(agenda):
-@app.route('/meeting_process', methods=['GET', 'POST'])
-def meeting_process():
-    agenda = agenda_temp()
+@app.route('/meeting_process/<agenda_id>', methods=['GET', 'POST'])
+def meeting_process(agenda_id):
+    path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/json"
+    file = open(f"{path}/{agenda_id}.txt", "r")
+    agenda = json.load(file)
+
     # Set Meeting Type Field
     meet_type = agenda['meet_type']
     meet_default = ""
@@ -356,11 +277,14 @@ def meeting_process():
     member_list = db.session.query(EntityMembers).filter(((EntityMembers.entity_code == current_user.user_city_code)
                                                           & (EntityMembers.group_code == meet_default))).all()
     members = []
+    member_titles = []
     member_select_list = ['Select Member', 'NA']
     for member in member_list:
         full_name = f'{member.member_first_name} {member.member_last_name}'
+        title_name = f'{member.title} {member.member_last_name}'
         members.append(full_name)
         member_select_list.append(full_name)
+        member_titles.append(title_name)
 
     member_list = db.session.query(EntityMembers).filter(((EntityMembers.entity_code == current_user.user_city_code)
                                                           & (EntityMembers.group_code == 'staff'))).all()
@@ -369,39 +293,43 @@ def meeting_process():
         full_name = f'{member.member_first_name} {member.member_last_name}'
         staff.append(full_name)
 
-    full_motions_list, motions_list = create_motion_list(agenda)
-    # form = UpdateAgendaForm()
-    form, member_list_var = file_list_form_builder(members, meetings_list, meet_default, staff, motions_list, member_select_list)
-
-    # for dd in motions_list:
-    #    print(f"Motion: {dd}")
+    full_motions_list, motions_list, full_consent_list, consent_list = create_motion_list(agenda)
+    # motion_list, motion_list_2, consent_list, consent_list_2
+    form, member_list_var = file_list_form_builder(members, meetings_list, meet_default, staff, motions_list,
+                                                   member_select_list, consent_list)
 
     if form.validate_on_submit():
-        print(f'Validate: {motions_list}')
-        members_present = []
+        members_list = []
         staff_present = []
-        motion_callers = []
+        motion_callers = {}
+
         for var_name in form:
             if not var_name.id == 'submit':
-                # print(f'Name: {var_name.name} / Data: {var_name.data}')
                 if 'checked' in str(var_name):
                     if str(var_name.name) in member_list_var:
-                        members_present.append(var_name.name)
+                        members_list.append(var_name.name)
                     else:
                         staff_present.append(var_name.name)
-                if var_name.name in full_motions_list:
-                    # print(f'Var Name: {var_name.name} / Data: {var_name.data}')
+                else:
+                    if str(var_name.name) in member_list_var:
+                        members_list.append(f"{var_name.name} (absent)")
+                if var_name.name in full_motions_list or var_name.name in full_consent_list:
                     if not var_name.data == 'Select Member' or var_name.data == 'NA':
-                        motion_callers.append({var_name.name: var_name.data})
-                        # print(f'Var Name: {var_name.name} / Data: {var_name.data}')
+                        motion_callers[var_name.id] = var_name.data
 
-        print(members_present)
+        # mp = json.dumps(members_present)
+        # sp = json.dumps(staff_present)
+        # mc = json.dumps(motion_callers)
+
+        print(members_list)
         print(staff_present)
         print(motion_callers)
+        print(member_titles)
         return render_template('index.html')
 
     return render_template('meeting12.html', form=form, agenda=agenda, member_list_var=member_list_var,
-                           motions_list_var=motions_list, staff_list_var=staff)
+                           motions_list_var=motions_list, staff_list_var=staff, agenda_id=agenda_id,
+                           consent_list_var=consent_list)
 
 
 @app.route('/test_dict', methods=['GET', 'POST'])

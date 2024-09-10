@@ -6,7 +6,7 @@ from app import app, db
 from app.models import User, EntityName, EntityMembers, EntityGroups
 
 
-def file_list_form_builder(members, meetings_list, meet_default, staff_list, motions_list, member_select_list):
+def file_list_form_builder(members, meetings_list, meet_default, staff_list, motions_list, member_select_list, consent_list):
     class MemberListForm(FlaskForm):
         pass
 
@@ -20,10 +20,21 @@ def file_list_form_builder(members, meetings_list, meet_default, staff_list, mot
     for (i, name) in enumerate(staff_list):
         setattr(MemberListForm, name, BooleanField(label=name))
 
-    # print(motions_list)
     for each_1 in motions_list:
         ct = 0
         for jj in each_1:
+            for key in jj:
+                if ct == 0:
+                    ct += 1
+                    setattr(MemberListForm, key, SelectField(label='Select 1st', choices=member_select_list))
+                else:
+                    ct += 1
+                    setattr(MemberListForm, key, SelectField(label='Select 2nd', choices=member_select_list))
+
+    # consent list
+    for each_item in consent_list:
+        ct = 0
+        for jj in each_item:
             for key in jj:
                 if ct == 0:
                     ct += 1

@@ -35,7 +35,7 @@
                                                 <h4 class="text-center">{{ agenda['location'] }}</h4>
                                                 <h4 class="text-center">{{ agenda['date'] }}&nbsp{{ agenda['time'] }}</h4>
                                                 <br><br>
-                                              <form method="post" action="/meeting_process" enctype="multipart/form-data">
+                                              <form method="post" action="/meeting_process/{{ agenda_id }}" enctype="multipart/form-data">
                                               <div class="row">
                                                   <table class="table">
                                                     <tbody>
@@ -50,7 +50,7 @@
                                               <br>
                                               <!-- Accordian Meeting Start -->
                                                <div class="accordion" id="accordionMeeting">
-                                                    <div class="accordion-item"> <!-- Accordian One Item Start -->
+                                                    <div class="accordion-item"> <!-- Accordian Members/Staff Item Start -->
                                                         <h2 class="accordion-header" id="headingPresent">
                                                           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePresent" aria-expanded="false" aria-controls="collapsePresent">
                                                             Officials Present
@@ -108,7 +108,55 @@
                                                         </div>
                                                     </div>  <!-- Accordian One Item End -->
 
-                                                   <div class="accordion-item"> <!-- Accordian Two Item Start -->
+                                                   <div class="accordion-item"> <!-- Accordian Consent Item Start -->
+                                                        <h2 class="accordion-header" id="headingConsentMotions">
+                                                          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConsentMotions" aria-expanded="false" aria-controls="collapseMotions">
+                                                            Consent Motions
+                                                          </button>
+                                                        </h2>
+                                                        <div id="collapseConsentMotions" class="accordion-collapse collapse" aria-labelledby="headingConsentMotions" data-bs-parent="#accordionMeeting">
+                                                            <div class="accordion-body">
+                                                                <div class="row"> <!-- Row One Start -->
+                                                                    <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                                                        <div class="card-body">
+                                                                            <h6 class="card-title">Consent Motion Assignment</h6>
+                                                                            <div class="row">
+                                                                                <table class="table">
+                                                                                    <tbody>
+                                                                                        {% for each_1 in consent_list_var %}
+                                                                                            {% for jj in each_1 %}
+                                                                                                {% for key in jj %}
+                                                                                                    {% if not '_2' in key %}
+                                                                                                        <tr class="fw-bolder">
+                                                                                                            <td colspan="2">
+                                                                                                                {{ jj[key] }}
+                                                                                                            </td>
+                                                                                                        </tr>
+                                                                                                            <tr>
+                                                                                                            <td> {{ form[key].label }}</td>
+                                                                                                            <td> {{ form[key] }}</td>
+                                                                                                            </tr>
+                                                                                                        {% else %}
+                                                                                                            <tr>
+                                                                                                            <td> {{ form[key].label }}</td>
+                                                                                                            <td> {{ form[key] }}</td>
+                                                                                                            </tr>
+                                                                                                    {% endif %}
+
+                                                                                                {% endfor %}
+                                                                                            {% endfor %}
+                                                                                        {% endfor %}
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>  <!-- Row One End -->
+                                                            </div> <!-- Accordian Body End -->
+                                                        </div>
+                                                    </div>  <!-- Accordian two Item End -->
+
+                                                   <div class="accordion-item"> <!-- Accordian Motions Item Start -->
                                                         <h2 class="accordion-header" id="headingMotions">
                                                           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMotions" aria-expanded="false" aria-controls="collapseMotions">
                                                             Meeting Motions
@@ -160,7 +208,7 @@
                                                </div> <!-- Accordian Meeting End -->
                                                   <br> <br>
                                                   <button type="submit" class="btn btn-primary">Submit</button>
-                                                  <button type="button" class="btn btn-secondary">Cancel</button>
+                                                  <a class="btn btn-secondary" href="{{ url_for('index') }}" role="button">Cancel</a>
                                               </form>
 
                                           </div>  <!-- Second Card Body End -->
