@@ -294,7 +294,6 @@ def meeting_process(agenda_id):
         staff.append(full_name)
 
     motion_list_labels, motion_list_full, consent_list_labels, consent_list_full, ml_sm, cl_sm = create_motion_list(agenda)
-    print(motion_list_full)
     form, member_list_var = file_list_form_builder(members, meetings_list, meet_default, staff, motion_list_full,
                                                    member_select_list, consent_list_full)
 
@@ -321,10 +320,10 @@ def meeting_process(agenda_id):
         # sp = json.dumps(staff_present)
         # mc = json.dumps(motion_callers)
 
-        # print(members_list)
-        # print(staff_present)
+        print(members_list)
+        print(staff_present)
         print(f"Motion Callers: {motion_callers}")
-        # print(member_titles)
+        print(member_titles)
         return render_template('index.html')
 
     return render_template('meeting12.html', form=form, agenda=agenda, member_list_var=member_list_var,
