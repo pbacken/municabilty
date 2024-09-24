@@ -4,8 +4,9 @@ from app.models import User
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField, \
-    FieldList, FormField, Form
-from wtforms.validators import DataRequired, ValidationError, Email, EqualTo, Length
+    FieldList, FormField, Form, HiddenField, IntegerField
+from wtforms.validators import DataRequired, ValidationError, Email, EqualTo, Length, NumberRange
+from flask_ckeditor import CKEditorField
 
 
 class LoginForm(FlaskForm):
@@ -80,6 +81,35 @@ class MeetingForm(FlaskForm):
                             validators=[FileRequired()])
 
     submit = SubmitField('Create Meeting')
+
+
+class EditMinutesForm(FlaskForm):
+    meeting_type = SelectField('Meeting Type', choices=[('council', 'City Council'),
+                                                        ('hrc', 'Human Rights Commission'),
+                                                        ('plan', 'Planning Commission'),
+                                                        ('prf', 'Parks, Rec and Forestry'),
+                                                        ('sen', 'Senior Commission'),
+                                                        ('sus', 'Sustainability Committee'),
+                                                        ('chart', 'Charter Commission')],
+                                                render_kw={'style': 'width: 275px'})
+
+    content = CKEditorField('Content', validators=[DataRequired()])
+
+    submit = SubmitField('Update Minutes')
+
+
+class DiaryForm(FlaskForm):
+    meeting_type_read_only = SelectField('Meeting Type', choices=[('council', 'City Council'),
+                                                        ('hrc', 'Human Rights Commission'),
+                                                        ('plan', 'Planning Commission'),
+                                                        ('prf', 'Parks, Rec and Forestry'),
+                                                        ('sen', 'Senior Commission'),
+                                                        ('sus', 'Sustainability Committee'),
+                                                        ('chart', 'Charter Commission')],
+
+                                          render_kw={'style': 'width: 275px', 'readonly': True})
+
+    diary_content = CKEditorField('Diary Content', render_kw={'readonly': True})
 
 
 class MembersPresentForm(Form):

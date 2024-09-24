@@ -6,8 +6,8 @@ import uuid
 from app import app, db
 from app.email import send_password_reset_email
 from app.forms import LoginForm, RegistrationForm, EditProfileForm, ResetPasswordRequestForm, \
-    ResetPasswordForm, MeetingForm, MembersPresentForm, UpdateAgendaForm
-from app.models import User, EntityName, EntityMembers, EntityGroups
+    ResetPasswordForm, MeetingForm, MembersPresentForm, UpdateAgendaForm, EditMinutesForm, DiaryForm
+from app.models import User, EntityName, EntityMembers, EntityGroups, MeetingAttendance, MeetingInfo, MeetingMotionItems, MeetingMotionVotes
 from datetime import datetime, timezone
 from flask import render_template, flash, redirect, url_for, request, session, copy_current_request_context, abort
 from flask_login import current_user, login_user, logout_user, login_required
@@ -19,8 +19,9 @@ import assemblyai as aai
 import threading
 from flask_wtf.file import MultipleFileField, FileRequired
 from werkzeug.utils import secure_filename
-from app.func_agenda.agenda_parse import openai_agenda, to_pretty_json, agenda_temp, create_motion_list
-from app.func_agenda.agenda_form_config import file_list_form_builder
+from app.func_agenda.agenda_parse import openai_agenda, to_pretty_json, agenda_temp, create_motion_list, updated_agenda
+from app.func_agenda.form_config import file_list_form_builder, diary_speaker_list
+from app.func_agenda.meeting_processing import create_prompt
 import csv
 from collections import namedtuple
 from wtforms import SubmitField
@@ -34,15 +35,15 @@ app.jinja_env.filters['tojson_pretty'] = to_pretty_json
 
 app.config.update(
     # Flask-Dropzone config:
-    DROPZONE_DEFAULT_MESSAGE='<i class="size-48" data-feather="file"></i><br><br>Drag your PDF here<br>Or'
-                             '<br>Click to Browse Files',
+    DROPZONE_DEFAULT_MESSAGE='<i class="size-48" data-feather="file"></i><br><br>Drag your File Here<br>Or'
+                             '<br>Click to Browse',
     DROPZONE_ENABLE_CSRF=True,
     DROPZONE_ALLOWED_FILE_CUSTOM=True,
     DROPZONE_ALLOWED_FILE_TYPE='.pdf',
-    DROPZONE_MAX_FILE_SIZE=3,
+    DROPZONE_MAX_FILE_SIZE=100,
     # DROPZONE_UPLOAD_ON_CLICK=True,
     # DROPZONE_IN_FORM=True,
-    DROPZONE_UPLOAD_ACTION='handle_upload',  # URL or endpoint
+    # DROPZONE_UPLOAD_ACTION='handle_upload',  # URL or endpoint
     # DROPZONE_REDIRECT_VIEW='completed',
     # DROPZONE_UPLOAD_BTN_ID='submit'
 )
@@ -220,6 +221,14 @@ def create_meeting():
     # return render_template('dz_test.html', title='Create Meeting')
 
 
+@app.route('/upload_audio/<meet_id>', methods=['GET'])
+@login_required
+def upload_audio(meet_id):
+
+    return render_template('upload_audio.html', title='Upload Audio', meet_id=meet_id)
+    # return render_template('dz_test.html', title='Create Meeting')
+
+
 @app.route('/upload', methods=['POST'])
 def handle_upload():
     print('uploading...')
@@ -237,27 +246,65 @@ def handle_upload():
     return render_template('process-agenda.html', filename=filename)
 
 
+@app.route('/upload_audio_file/<meet_id>', methods=['POST'])
+def handle_upload_audio_file(meet_id):
+    print('uploading audio...')
+
+    f = request.files.get('file')
+    filename = secure_filename(f.filename)
+    new_path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/audio"
+
+    audio_file = db.session.query(MeetingInfo).filter(MeetingInfo.audio_name == secure_filename(filename)).first()
+    if audio_file is not None:
+        pass
+    else:
+        if filename != '':
+            if not os.path.exists(new_path):
+                os.makedirs(new_path)
+            f.save(os.path.join(new_path, filename))
+
+        # update database
+        meeting = MeetingInfo.query.get(meet_id)
+        meeting.audio_name = filename
+        db.session.commit()
+
+    return render_template('meeting_list.html', filename=filename)
+
+
 @app.route('/process-agenda/<filename>')
 def process_agenda_function(filename):
     new_path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/json"
-    jsonuuid = uuid.uuid4()
 
-    agenda = agenda_temp()
-    # agenda = openai_agenda(secure_filename(filename))
+    meeting = db.session.query(MeetingInfo).filter(MeetingInfo.agenda_name == secure_filename(filename)).first()
+    if meeting is not None:
+        meet_id = meeting.id
+        jsonuuid = meeting.meeting_agenda
+    else:
+        print("Not Found")
+        jsonuuid = uuid.uuid4()
+        # agenda = agenda_temp()
+        agenda = openai_agenda(secure_filename(filename))
 
-    print('agenda done')
+        print('agenda done')
 
-    if not os.path.exists(new_path):
-        os.makedirs(new_path)
-    f = open(f"{new_path}/{jsonuuid}.txt", "w")
-    f.write(json.dumps(agenda))
-    f.close()
-    print("File Written")
-    return redirect(url_for('meeting_process', agenda_id=jsonuuid))
+        if not os.path.exists(new_path):
+            os.makedirs(new_path)
+        f = open(f"{new_path}/{jsonuuid}.txt", "w")
+        f.write(json.dumps(agenda))
+        f.close()
+        print("File Written")
+
+        meeting = MeetingInfo(agenda_name=secure_filename(filename), meeting_agenda=str(jsonuuid), meeting_entity=current_user.user_city_code)
+        db.session.add(meeting)
+        db.session.commit()
+        meet_id = meeting.id
+        print(f"Insert: {meet_id}")
+
+    return redirect(url_for('meeting_process', agenda_id=jsonuuid, meet_id=meet_id))
 
 
-@app.route('/meeting_process/<agenda_id>', methods=['GET', 'POST'])
-def meeting_process(agenda_id):
+@app.route('/meeting_process/<agenda_id>/<meet_id>', methods=['GET', 'POST'])
+def meeting_process(agenda_id, meet_id):
     path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/json"
     file = open(f"{path}/{agenda_id}.txt", "r")
     agenda = json.load(file)
@@ -266,208 +313,309 @@ def meeting_process(agenda_id):
     meet_type = agenda['meet_type']
     meet_default = ""
 
-    # set meeting types
+    # update meeting info to database
+    meeting_date = f"{agenda['date']} {agenda['time']}"
+
+    meeting = MeetingInfo.query.get(meet_id)
+    meeting.meeting_type = meet_type
+    meeting.meeting_date = agenda['date']
+    meeting.meeting_time = agenda['time']
+    meeting.meeting_agenda = agenda_id
+    meeting.meeting_entity = current_user.user_city_code
+
+    db.session.commit()
+
+    # get meeting types
     meeting_type = db.session.query(EntityGroups).filter(EntityGroups.entity_code == current_user.user_city_code).all()
     for mtypes in meeting_type:
         if mtypes.group_type in meet_type:
             meet_default = mtypes.group_code
     meetings_list = [("", "Choose Meeting Type")] + [(i.group_code, i.group_type) for i in meeting_type]
 
-    # set members list
+    # get members list
     member_list = db.session.query(EntityMembers).filter(((EntityMembers.entity_code == current_user.user_city_code)
                                                           & (EntityMembers.group_code == meet_default))).all()
     members = []
     member_titles = []
     member_select_list = ['Select Member', 'NA']
+    staff_select_list = []
+    member_dict = {}
+    staff_dict = {}
     for member in member_list:
         full_name = f'{member.member_first_name} {member.member_last_name}'
-        title_name = f'{member.title} {member.member_last_name}'
+
+        member_dict[full_name] = {
+                                  'id': member.id,
+                                  'group_code': member.group_code,
+                                  'entity_code': member.entity_code,
+                                  'title': member.title,
+                                  'position': member.position
+                                  }
+
+        # title_name = f'{member.title} {member.member_last_name}'
         members.append(full_name)
         member_select_list.append(full_name)
-        member_titles.append(title_name)
+
+        # member_titles.append(title_name)
 
     member_list = db.session.query(EntityMembers).filter(((EntityMembers.entity_code == current_user.user_city_code)
                                                           & (EntityMembers.group_code == 'staff'))).all()
-    staff = []
+
     for member in member_list:
         full_name = f'{member.member_first_name} {member.member_last_name}'
-        staff.append(full_name)
+        staff_select_list.append(full_name)
+        staff_dict[full_name] = {
+            'id': member.id,
+            'group_code': member.group_code,
+            'entity_code': member.entity_code,
+            'title': member.title,
+            'position': member.position
+        }
 
+    print(f"Staff Select List: {staff_select_list}")
+    print(f"Member Select List: {member_select_list}")
     motion_list_labels, motion_list_full, consent_list_labels, consent_list_full, ml_sm, cl_sm = create_motion_list(agenda)
-    form, member_list_var = file_list_form_builder(members, meetings_list, meet_default, staff, motion_list_full,
+    form, member_list_var = file_list_form_builder(members, meetings_list, meet_default, staff_select_list, motion_list_full,
                                                    member_select_list, consent_list_full)
 
+    motion = db.session.query(MeetingMotionItems).filter(MeetingMotionItems.meeting_id == meet_id).first()
+    if motion is not None:
+        # meeting motions saved already
+        pass
+    else:
+        # save the meeting motions
+        motion_save = []
+        for each_motion in ml_sm:
+            if not ml_sm[each_motion]:
+                motion_code = ""
+            else:
+                motion_code = ml_sm[each_motion][0]
+
+            motion_save.append(MeetingMotionItems(entity_code=current_user.user_city_code,
+                                                  meeting_id=meet_id,
+                                                  motion_title=each_motion,
+                                                  agenda_item=motion_code))
+
+        db.session.bulk_save_objects(motion_save)
+        db.session.commit()
+
+    # after submit
     if form.validate_on_submit():
+        print("After Submit")
         members_list = []
         staff_present = []
         motion_callers = {}
+        member_attendance_save = []
+        motion_approve = []
 
         for var_name in form:
             if not var_name.id == 'submit':
                 if 'checked' in str(var_name):
                     if str(var_name.name) in member_list_var:
+                        print(f"Name: {var_name.name} Id: {member_dict[var_name.name]['id']}")
+                        print(f"Name: {var_name.name} Id: {member_dict[var_name.name]}")
                         members_list.append(var_name.name)
+                        member_attendance_save.append(MeetingAttendance(entity_code=current_user.user_city_code,
+                                                             meeting_id=meet_id,
+                                                             member_id=member_dict[var_name.name]['id'],
+                                                             member_type=member_dict[var_name.name]['group_code'],
+                                                             member_present='y'))
                     else:
                         staff_present.append(var_name.name)
+                        member_attendance_save.append(MeetingAttendance(entity_code=current_user.user_city_code,
+                                                             meeting_id=meet_id,
+                                                             member_id=staff_dict[var_name.name]['id'],
+                                                             member_type=staff_dict[var_name.name]['group_code'],
+                                                             member_present='y'))
+
                 else:
                     if str(var_name.name) in member_list_var:
                         members_list.append(f"{var_name.name} (absent)")
+                        member_attendance_save.append(MeetingAttendance(entity_code=current_user.user_city_code,
+                                                             meeting_id=meet_id,
+                                                             member_id=member_dict[var_name.name]['id'],
+                                                             member_type=member_dict[var_name.name]['group_code'],
+                                                             member_present='n'))
                 if var_name.name in motion_list_labels or var_name.name in consent_list_labels:
                     if not var_name.data == 'Select Member' or var_name.data == 'NA':
+                        print(f"Name: {var_name.data}")
+                        print(f"Id: {member_dict[var_name.data]['id']}")
+                        print(f"Name: {var_name.data} Id: {member_dict[var_name.data]['id']}")
                         motion_callers[var_name.id] = var_name.data
+                        motion_approve.append(MeetingMotionVotes(entity_code=current_user.user_city_code,
+                                                                 meeting_id=meet_id,
+                                                                 member_id=member_dict[var_name.data]['id'],
+                                                                 motion_id=var_name.id))
 
-        # mp = json.dumps(members_present)
-        # sp = json.dumps(staff_present)
-        # mc = json.dumps(motion_callers)
-
+        db.session.bulk_save_objects(member_attendance_save)
+        db.session.bulk_save_objects(motion_approve)
+        db.session.commit()
         print(members_list)
         print(staff_present)
         print(f"Motion Callers: {motion_callers}")
-        print(member_titles)
-        return render_template('index.html')
+        print(member_dict)
+
+        return render_template('meeting_list.html')
 
     return render_template('meeting12.html', form=form, agenda=agenda, member_list_var=member_list_var,
-                           motions_list_var=motion_list_full, staff_list_var=staff, agenda_id=agenda_id,
-                           consent_list_var=consent_list_full)
+                           motions_list_var=motion_list_full, staff_list_var=staff_select_list, agenda_id=agenda_id,
+                           consent_list_var=consent_list_full, meet_id=meet_id)
 
 
-@app.route('/test_dict', methods=['GET', 'POST'])
-def test_dic():
+# this route includes minutes, and diarization
+@app.route('/review_minutes', methods=['GET', 'POST'])
+def review_minutes():
+    meeting = db.session.query(MeetingInfo).filter(MeetingInfo.id == 1).first()
+
+    agenda_path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/json"
+    minutes_path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/minutes"
+    minutes_file = open(f"{minutes_path}/rob_cc_022024_summary.txt", "r")
+    diary_file = open(f"{minutes_path}/rob_cc_022024_diarization.txt", "r")
+
+    form = EditMinutesForm()
+    form.content.data = minutes_file.read().replace('\n', '<br />')
+
+
+
+    ## Diary Form
+    var_meet_default = ""
+    if 'Council' in meeting.meeting_type:
+        var_meet_default = 'council'
+    elif 'Sustain' in meeting.meeting_type:
+        var_meet_default = 'sus'
+
+    diary_form = DiaryForm(meeting_type_read_only='council')
+
+    diary_form.diary_content.data = diary_file.read().replace('\n', '<br />')
+
+    # For Future use, updating diarization names (Speaker 1, Speaker 2, etc
+    officials_list = db.session.query(EntityMembers, MeetingAttendance).filter(
+        MeetingAttendance.id == '1', ).filter(MeetingAttendance.member_id == EntityMembers.id, ).filter(
+        MeetingAttendance.member_present == 'y').all()
+
+    for official in officials_list:
+        full_name = f'{official.EntityMembers.member_first_name} {official.EntityMembers.member_last_name}'
+        print(full_name)
+
+    # return render_template('preview_edit.html', form=form)
+    return render_template('review_minutes.html', form=form, diary_form=diary_form)
+
+
+@app.route('/preview_edit_diary/<meet_id>', methods=['GET', 'POST'])
+def preview_edit_diary(meet_id):
+    agenda_path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/json"
+    minutes_path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/minutes"
+    file = open(f"{minutes_path}/rob_cc_022024_diarization.txt", "r")
+
+    officials_list = db.session.query(EntityMembers, MeetingAttendance).filter(
+        MeetingAttendance.id == '1',).filter(MeetingAttendance.member_id == EntityMembers.id,).filter(
+        MeetingAttendance.member_present == 'y').all()
+
+    for official in officials_list:
+
+        full_name = f'{official.EntityMembers.member_first_name} {official.EntityMembers.member_last_name}'
+        print(full_name)
+
+    jj = diary_speaker_list(file)
+    print(jj)
+    file.seek(0)
+    list_diary = []
+
+    for line in file:
+        try:
+            list_diary.append(f"{line} {next(file)}")
+        except StopIteration as e:
+            break
+
+    return render_template('preview_edit_diary.html', diary=list_diary)
+
+
+@app.route('/process_minutes/<meet_id>')
+def process_audio(meet_id):
+    # Get Meeting Object
+    meeting = MeetingInfo.query.get(meet_id)
+
+    # process Minutes
+
+    return render_template('meeting_list.html')
+
+
+@app.route('/meeting_list')
+def meeting_list():
+
+    # get all meetings
+    meeting_list = db.session.query(MeetingInfo).filter((MeetingInfo.meeting_entity == current_user.user_city_code)).all()
+
+    for meeting in meeting_list:
+        print(f"{meeting.id} / {meeting.meeting_type} / {meeting.meeting_date} / {meeting.meeting_agenda}")
+
+    return render_template('meeting_list.html', meeting_list=meeting_list)
+
+
+@app.route('/people_list')
+def people_list():
+
+    # get all meetings
+    people_list = db.session.query(EntityMembers).filter((EntityMembers.entity_code == current_user.user_city_code)).all()
+
+    #for people in people_list:
+    #    print(f"{people.id} / {people.meeting_type} / {meeting.meeting_date} / {meeting.meeting_agenda}")
+
+    return render_template('people_list.html', people_list=people_list)
+
+
+@app.route('/group_list')
+def group_list():
+
+    # get all meetings
+    group_list = db.session.query(EntityGroups).filter(EntityGroups.entity_code == current_user.user_city_code).all()
+
+    #for people in people_list:
+    #    print(f"{people.id} / {people.meeting_type} / {meeting.meeting_date} / {meeting.meeting_agenda}")
+
+    return render_template('group_list.html', city_group_list=group_list)
+
+@app.route('/meeting_page/<meet_id>')
+def meeting_page(meet_id):
+
+    meeting_info = db.session.query(MeetingInfo).filter(MeetingInfo.id == meet_id).all()
+
+    for meeting in meeting_info:
+        print(meeting.meeting_date)
+
+    return render_template('meeting_info_2.html', meeting=meeting)
+
+
+@app.route('/attendance_list')
+def attendance_list():
+
+    # get all meetings
+    attend_list = db.session.query(MeetingAttendance).filter(MeetingAttendance.entity_code == current_user.user_city_code).all()
+
+    #for people in people_list:
+    #    print(f"{people.id} / {people.meeting_type} / {meeting.meeting_date} / {meeting.meeting_agenda}")
+
+    return render_template('group_list.html', attend_list=attend_list)
+
+
+@app.route('/test_dict/<meet_id>', methods=['GET', 'POST'])
+def test_dic(meet_id):
+    path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/json"
+    # file = open(f"{path}/{agenda_id}.txt", "r")
+    # agenda = json.load(file)
     agenda = agenda_temp()
-    motions_list = create_motion_list(agenda)
-    # print(motions_list)
 
-    for each_1 in motions_list:
-        # print(each_1)
-        ct = 0
-        for jj in each_1:
-            # for item in jj({i: i for i in range(10)}, 2):
-            #     print(item)
-            for key in jj:
-                print(f'{ct}, {key}')
-                if ct == 0:
-                    ct += 1
-                    print(f'Key1: {key}, {jj[key]}')
-                else:
-                    ct += 1
-                    print(f'Key2: {key}, {jj[key]}')
+    jj = updated_agenda(agenda, meet_id)
 
-    return 'Done'
+    return jj
 
 
-@app.route('/audioR', methods=['GET', 'POST'])
-def audio_r():
-    return render_template('audioR.html')
+@app.route('/process_meeting/<meet_id>')
+def _process_meeting(meet_id):
 
+    prompt = create_prompt(meet_id)
 
-@app.route('/audio_r2', methods=['GET', 'POST'])
-def audio_r2():
-    return render_template('audioR.html')
-
-
-@socketio.event
-def my_event(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
-         {'data': message['data'], 'count': session['receive_count']})
-    print(message)
-
-
-@socketio.event
-def event_record(message):
-    print('Start event_record')
-    print(message)
-
-    emit('my_response',
-         {'data': 'Start Recording', 'count': '1'})
-
-
-@socketio.event
-def stream_media(message):
-    print('Start event_record')
-    # print(message)
-
-    transcriber = aai.RealtimeTranscriber(
-        on_data=on_data,
-        on_error=on_error,
-        sample_rate=44_100,
-        on_open=on_open,  # optional
-        on_close=on_close,  # optional
-    )
-    # Start the connection
-    transcriber.connect()
-    print('connect to transcriber')
-
-    transcriber.stream(message)
-    print("streaming")
-
-    transcriber.close()
-    print('transcribe close')
-
-    emit('my_response', 'audio stream started')
-
-    emit('my_response',
-         {'data': 'Start Recording', 'count': '1'})
-
-
-@socketio.event
-def disconnect_request():
-    @copy_current_request_context
-    def can_disconnect():
-        disconnect()
-
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    # for this emit we use a callback function
-    # when the callback function is invoked we know that the message has been
-    # received and it is safe to disconnect
-    emit('my_response',
-         {'data': 'Disconnected!', 'count': session['receive_count']},
-         callback=can_disconnect)
-
-
-@socketio.event
-def connect():
-    global thread
-    with thread_lock:
-        if thread is None:
-            thread = socketio.start_background_task(background_thread)
-    emit('my_response', {'data': 'Socket Connected', 'count': 0})
-    print('socket connected (connect)')
-
-
-@socketio.on('disconnect')
-def test_disconnect():
-    print('Client disconnected', request.sid)
-
-
-def on_open(session_opened: aai.RealtimeSessionOpened):
-    # "This function is called when the connection has been established."
-
-    print("Session ID:", session_opened.session_id)
-
-
-def on_data(transcript: aai.RealtimeTranscript):
-    # "This function is called when a new transcript has been received."
-
-    if not transcript.text:
-        return
-
-    if isinstance(transcript, aai.RealtimeFinalTranscript):
-        print(transcript.text, end="\r\n")
-    else:
-        print(transcript.text, end="\r")
-
-
-def on_error(error: aai.RealtimeError):
-    # "This function is called when the connection has been closed."
-
-    print("An error occured:", error)
-
-
-def on_close():
-    # "This function is called when the connection has been closed."
-
-    print("Closing Session")
+    return prompt
 
 
 @app.route('/load_data')

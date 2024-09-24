@@ -11,10 +11,11 @@ from flask_migrate import Migrate
 from flask_dropzone import Dropzone
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask_uuid import FlaskUUID
-
+from flask_ckeditor import CKEditor
 
 app = Flask(__name__)
 FlaskUUID(app)
+ckeditor = CKEditor(app)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)

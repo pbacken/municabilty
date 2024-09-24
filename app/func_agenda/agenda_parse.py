@@ -5,6 +5,7 @@ import json
 from app import app
 from flask_login import current_user
 from collections import defaultdict
+from app.func_agenda.query_func import get_motion_votes
 
 
 def agenda_temp():
@@ -107,7 +108,7 @@ def create_motion_list(agenda):
     cl_sm = {}
 
     section_master_list = ['approval of the', 'consent agenda', 'public hearings',
-                   'old business', 'new business', 'other business', 'adjournment']
+                   'old business', 'new business', 'other business', 'adjournment', 'information only']
 
     # meetings_list = [("", "Choose Meeting Type")] + [(i.group_code, i.group_type) for i in meeting_type]
 
@@ -116,6 +117,14 @@ def create_motion_list(agenda):
             if master in each_section['title'].casefold():
                 if 'subitems' in each_section:
                     if each_section['title'].casefold() in 'consent agenda':
+                        ml_sm_list = []
+                        motion_list_labels.append(str(each_section['number']))
+                        motion_list_labels.append(str(each_section['number']) + '_2')
+                        motion_list_full.append([{str(each_section['number']): each_section['title']},
+                                                 {str(each_section['number']) + '_2': each_section[
+                                                     'title']}])
+                        ml_sm_list.append(f"{each_section['number']}")
+                        ml_sm[each_section['title'].casefold()] = ml_sm_list
                         cl_sm_list = []
                         for each_sub in each_section['subitems']:
                             consent_list_labels.append(str(each_section['number']) + str(each_sub['number']))
@@ -127,8 +136,8 @@ def create_motion_list(agenda):
                         cl_sm[each_section['title'].casefold()] = cl_sm_list
                     else:
                         for each_sub in each_section['subitems']:
-                            ml_sm_list = []
                             if not each_sub['title'].casefold() == 'none':
+                                ml_sm_list = []
                                 motion_list_labels.append(str(each_section['number']) + str(each_sub['number']))
                                 motion_list_labels.append(str(each_section['number']) + str(each_sub['number']+'_2'))
                                 motion_list_full.append([{str(each_section['number']) + str(each_sub['number']): each_sub['title']},
@@ -145,9 +154,56 @@ def create_motion_list(agenda):
                     ml_sm_list.append(f"{each_section['number']}")
                     ml_sm[each_section['title'].casefold()] = ml_sm_list
 
-    print(f"ML: {ml_sm}")
-    print(f"CL: {cl_sm}")
     return motion_list_labels, motion_list_full, consent_list_labels, consent_list_full, ml_sm, cl_sm
+
+
+def get_speaker_list(diary):
+    for each_line in diary:
+        if 'Speaker' in each_line:
+            print(each_line)
+
+    return True
+
+
+def updated_agenda(agenda, meet_id):
+
+    motion_list_labels, motion_list_full, consent_list_labels, consent_list_full, ml_sm, cl_sm = create_motion_list(agenda)
+
+    motion_votes = get_motion_votes(meet_id)
+    mot_call = {}
+    for motion in motion_votes:
+        full_name = f"{motion.EntityMembers.member_first_name} {motion.EntityMembers.member_last_name}"
+        mot_call[motion.MeetingMotionVotes.motion_id] = full_name
+
+    agenda_votes = ""
+    for each_section in agenda['sections']:
+        motion_info = ''
+        # print(f"{each_section['number']}. {each_section['title']}")
+        agenda_votes += f"{each_section['number']}. {each_section['title']}"
+        if 'subitems' in each_section:
+            for each_sub in each_section['subitems']:
+                sub_title_info = f"    {each_sub['number']}. {each_sub['title']}"
+                # print(f"    {each_sub['number']}. {each_sub['title']}")
+                agenda_votes += f"    {each_sub['number']}. {each_sub['title']}"
+                if each_section['title'].casefold() in ml_sm:
+                    for ss in ml_sm[each_section['title'].casefold()]:
+                        if ss == f"{each_section['number']}{each_sub['number']}":
+                            # print(f"    Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']}")
+                            agenda_votes += f"    (Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']})"
+                if each_section['title'].casefold() in cl_sm:
+                    consent_motion_info = ''
+                    for ss in cl_sm[each_section['title'].casefold()]:
+                        if ss in mot_call:
+                            if ss == f"{each_section['number']}{each_sub['number']}":
+                                # print(f"    Item pulled. Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']}")
+                                agenda_votes += f"    (Item pulled. Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']})"
+        else:
+            if each_section['title'].casefold() in ml_sm:
+                for ss in ml_sm[each_section['title'].casefold()]:
+                    # print(f"Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']}")
+                    agenda_votes += f"(Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']})"
+
+    return agenda_votes
 
 
 def to_pretty_json(value):

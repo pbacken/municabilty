@@ -58,10 +58,43 @@ def load_user(id):
 
 class MeetingInfo(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
-    meeting_type: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
-    meeting_date: so.Mapped[datetime] = so.mapped_column(sa.DATETIME, index=True)
-    meeting_time: so.Mapped[datetime] = so.mapped_column(sa.DATETIME, index=True)
-    meeting_agenda: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    meeting_entity: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    meeting_type: so.Mapped[str] = so.mapped_column(sa.String(64), nullable=True)
+    meeting_date: so.Mapped[str] = so.mapped_column(sa.String(64), nullable=True)
+    meeting_time: so.Mapped[str] = so.mapped_column(sa.String(64), nullable=True)
+    # UUID of json object, stored in app
+    meeting_agenda: so.Mapped[str] = so.mapped_column(sa.String(32), nullable=True)
+    # Agenda Filename
+    agenda_name: so.Mapped[str] = so.mapped_column(sa.String(64), nullable=True)
+    meeting_minutes: so.Mapped[str] = so.mapped_column(sa.String(64), nullable=True)
+    audio_name: so.Mapped[str] = so.mapped_column(sa.String(64), nullable=True)
+
+
+class MeetingAttendance(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    entity_code: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    meeting_id: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    member_id: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    # Staff or member
+    member_type: so.Mapped[str] = so.mapped_column(sa.String(64), nullable=True)
+    # single char (n is absent, y is present
+    member_present: so.Mapped[str] = so.mapped_column(sa.String(1), nullable=True)
+
+
+class MeetingMotionVotes(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    entity_code: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    meeting_id: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    member_id: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    motion_id: so.Mapped[str] = so.mapped_column(sa.String(64))
+
+
+class MeetingMotionItems(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    entity_code: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    meeting_id: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    motion_title: so.Mapped[str] = so.mapped_column(sa.String(64))
+    agenda_item: so.Mapped[str] = so.mapped_column(sa.String(64))
 
 
 class EntityGroups(db.Model):

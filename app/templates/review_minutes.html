@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% import "bootstrap_wtf.html" as wtf %}
+    {% block content %}
+        <div class="container bg-primary">
+            <div id="layoutAuthentication">
+                <div id="layoutAuthentication_content">
+                    <main>
+                        <div class="container-xl px-4">
+                            <div class="container">
+                              <!-- Content here -->
+                                <div class="row">
+                                    <div class="col">  <!-- First Card -->
+                                        <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                          <div class="card-body">
+                                                    {{ form.hidden_tag() }}
+                                                    {{ wtf.quick_form(form) }}
+                                                    {{ ckeditor.load(pkg_type="basic") }}
+                                                    {{ ckeditor.config(name='content', width=400, height=500) }}
+                                          </div>  <!-- Card Body End -->
+                                        </div>
+                                    </div>   <!-- First Card End -->
+                                    <div class="col">  <!-- second Card -->
+                                        <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                          <div class="card-body">
+                                                {{ form.hidden_tag() }}
+                                                    {{ wtf.quick_form(diary_form) }}
+                                                    {{ ckeditor.load(pkg_type="basic") }}
+                                                    {{ ckeditor.config(name='diary_content', width=400, height=500) }}
+                                              <br><br><br>
+                                          </div>  <!-- Second Card Body End -->
+                                        </div>
+                                    </div> <!-- Second Card End -->
+
+                                </div>   <!-- End Row -->
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </div>
+{% endblock %}

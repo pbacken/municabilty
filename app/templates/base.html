@@ -6,7 +6,7 @@
     <title>CivicHub</title>
     <link rel="stylesheet" href='/static/css/styles.css' />
     <link rel="icon" type="image/x-icon" href='/static/images/favicon-32x32.png' />
-x`
+
     <script data-search-pseudo-elements defer src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/js/all.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js" crossorigin="anonymous"></script>
   </head>
@@ -145,18 +145,10 @@ x`
                                 <span class="badge bg-success-soft text-success ms-auto">2 New!</span>
                             </a>
 
-                            <!-- Sidenav Menu Heading (Core)-->
-                            <div class="sidenav-menu-heading">Core</div>
-                            <!-- Sidenav Accordion (Dashboard)-->
-                            <a class="nav-link collapsed" href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#collapseDashboards" aria-expanded="false" aria-controls="collapseDashboards">
-                                <div class="nav-link-icon"><i data-feather="activity"></i></div>
-                                Meetings
-                            </a>
-
                             <!-- Sidenav Heading (Custom)-->
                             <div class="sidenav-menu-heading">Meeting Minutes</div>
                             <!-- Sidenav Accordion (Pages)-->
-                            <a class="nav-link" href="{{ url_for('index') }}">
+                            <a class="nav-link" href="{{ url_for('meeting_list') }}">
                                 <div class="nav-link-icon"><i data-feather="list"></i></div>
                                 Meeting List
                             </a>
@@ -164,6 +156,25 @@ x`
                                 <div class="nav-link-icon"><i data-feather="file-plus"></i></div>
                                 Create New Meeting
                             </a>
+
+                            <!-- Sidenav Menu Heading (Core)-->
+                            <div class="sidenav-menu-heading">Configuration</div>
+                            <!-- Sidenav Accordion (Dashboard)-->
+                            <a class="nav-link collapsed" href="{{ url_for('people_list') }}">
+                                <div class="nav-link-icon"><i data-feather="user"></i></div>
+                                Officials
+                            </a>
+                            <a class="nav-link collapsed" href="{{ url_for('group_list') }}">
+                                <div class="nav-link-icon"><i data-feather="users"></i></div>
+                                Groups
+                            </a>
+
+                            <a class="nav-link collapsed" href="{{ url_for('review_minutes') }}">
+                                <div class="nav-link-icon"><i data-feather="columns"></i></div>
+                                Review Minutes
+                            </a>
+
+
 
 
                     <!-- Sidenav Footer-->

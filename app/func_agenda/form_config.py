@@ -69,3 +69,13 @@ def get_member_list(meet_default):
         member_select_list.append(full_name)
 
     return members, member_select_list
+
+
+def diary_speaker_list(diary):
+    diary_speaker_list = []
+    for each_line in diary:
+        if 'Speaker' in each_line:
+            if not each_line[:-2] in diary_speaker_list:
+                diary_speaker_list.append(each_line[:-2])
+
+    return diary_speaker_list

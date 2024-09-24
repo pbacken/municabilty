@@ -20,17 +20,17 @@ for each_section in agenda['sections']:
             if each_section['title'].casefold() in ml_sm_list:
                 for ss in ml_sm_list[each_section['title'].casefold()]:
                     if ss == f"{each_section['number'] }{each_sub['number']}":
-                        print(f"    First: {mot_call[ss]}  /  Second: {mot_call[ss + '_2']}")
+                        print(f"    Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']}")
             if each_section['title'].casefold() in cl_sm_list:
                 consent_motion_info = ''
                 for ss in cl_sm_list[each_section['title'].casefold()]:
                     if ss in mot_call:
                         if ss == f"{each_section['number'] }{each_sub['number']}":
-                            print(f"    First: {mot_call[ss]}  /  Second: {mot_call[ss + '_2']}")
+                            print(f"    Item pulled. Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']}")
     else:
         if each_section['title'].casefold() in ml_sm_list:
             for ss in ml_sm_list[each_section['title'].casefold()]:
-                print(f"First: {mot_call[ss]}  /  Second: {mot_call[ss+'_2']}")
+                print(f"Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss+'_2']}")
 
 
 """

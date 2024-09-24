@@ -1,0 +1,113 @@
+@app.route('/audioR', methods=['GET', 'POST'])
+def audio_r():
+    return render_template('audioR.html')
+
+
+@app.route('/audio_r2', methods=['GET', 'POST'])
+def audio_r2():
+    return render_template('audioR.html')
+
+
+@socketio.event
+def my_event(message):
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    emit('my_response',
+         {'data': message['data'], 'count': session['receive_count']})
+    print(message)
+
+
+@socketio.event
+def event_record(message):
+    print('Start event_record')
+    print(message)
+
+    emit('my_response',
+         {'data': 'Start Recording', 'count': '1'})
+
+
+@socketio.event
+def stream_media(message):
+    print('Start event_record')
+    # print(message)
+
+    transcriber = aai.RealtimeTranscriber(
+        on_data=on_data,
+        on_error=on_error,
+        sample_rate=44_100,
+        on_open=on_open,  # optional
+        on_close=on_close,  # optional
+    )
+    # Start the connection
+    transcriber.connect()
+    print('connect to transcriber')
+
+    transcriber.stream(message)
+    print("streaming")
+
+    transcriber.close()
+    print('transcribe close')
+
+    emit('my_response', 'audio stream started')
+
+    emit('my_response',
+         {'data': 'Start Recording', 'count': '1'})
+
+
+@socketio.event
+def disconnect_request():
+    @copy_current_request_context
+    def can_disconnect():
+        disconnect()
+
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    # for this emit we use a callback function
+    # when the callback function is invoked we know that the message has been
+    # received and it is safe to disconnect
+    emit('my_response',
+         {'data': 'Disconnected!', 'count': session['receive_count']},
+         callback=can_disconnect)
+
+
+@socketio.event
+def connect():
+    global thread
+    with thread_lock:
+        if thread is None:
+            thread = socketio.start_background_task(background_thread)
+    emit('my_response', {'data': 'Socket Connected', 'count': 0})
+    print('socket connected (connect)')
+
+
+@socketio.on('disconnect')
+def test_disconnect():
+    print('Client disconnected', request.sid)
+
+
+def on_open(session_opened: aai.RealtimeSessionOpened):
+    # "This function is called when the connection has been established."
+
+    print("Session ID:", session_opened.session_id)
+
+
+def on_data(transcript: aai.RealtimeTranscript):
+    # "This function is called when a new transcript has been received."
+
+    if not transcript.text:
+        return
+
+    if isinstance(transcript, aai.RealtimeFinalTranscript):
+        print(transcript.text, end="\r\n")
+    else:
+        print(transcript.text, end="\r")
+
+
+def on_error(error: aai.RealtimeError):
+    # "This function is called when the connection has been closed."
+
+    print("An error occured:", error)
+
+
+def on_close():
+    # "This function is called when the connection has been closed."
+
+    print("Closing Session")
