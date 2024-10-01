@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+    {% block content %}
+        <div class="container bg-primary">
+            <div id="layoutAuthentication">
+                <div id="layoutAuthentication_content">
+                    <main>
+                    <header class="page-header page-header-dark bg-gradient-primary-to-secondary pb-10">
+                        <div class="container-xl px-4">
+                            <div class="page-header-content pt-4">
+                                <div class="row align-items-center justify-content-between">
+                                    <div class="col-auto mt-4">
+                                        <h1 class="page-header-title">
+                                            <div class="page-header-icon"><i data-feather="filter"></i></div>
+                                            Meeting List
+                                        </h1>
+                                        <div class="page-header-subtitle">Searchable and Sortable Meeting List</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+                    <!-- Main page content-->
+                    <div class="container-xl px-4 mt-n10">
+                        <div class="card mb-4">
+                            <div class="card-header">{{ current_user.user_city }} Meetings</div>
+                            <div class="card-body">
+                                <div id="table"></div>
+                                </div>
+                            <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+                            <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
+                            <script>
+                              new gridjs.Grid({
+                                columns: [
+                                  { id: 'type', name: 'Meeting Type' },
+                                  { id: 'date', name: 'Date' },
+                                  { id: 'agenda', name: 'Agenda', sort: false },
+                                  { id: 'minutes', name: 'Minutes', sort: false },
+                                  { id: 'audio_link', name: 'Audio', sort: false }
+                                ],
+                                data: [
+                                  {% for meeting in meeting_list %}
+                                    {
+                                      type: '{{ meeting.meeting_type }}',
+                                      date: gridjs.html('<a href="meeting_page/{{ meeting.id }}">{{ meeting.meeting_date }}</a>'),
+                                      agenda: gridjs.html('<a href="meeting_process/{{ meeting.meeting_agenda }}/{{ meeting.id }}">Agenda</a>'),
+                                        {% if meeting.meeting_minutes %}
+                                          minutes: gridjs.html('<a href="/review_minutes/{{ meeting.id }}">Minutes</a>'),
+                                        {% else %}
+                                          minutes: gridjs.html('<a class="btn btn-orange btn-sm" href="/create_minutes/{{ meeting.id}}" role="button">Create Minutes</a>'),
+                                        {% endif %}
+
+                                        {% if meeting.audio_name %}
+                                              audio_link: gridjs.html('<a class="btn btn-red btn-sm" href="{{ url_for('index') }}" role="button">Re-Upload Audio</a>'),
+                                        {% else %}
+                                              audio_link: gridjs.html('<a class="btn btn-orange btn-sm" href="/upload_audio/{{ meeting.id}}" role="button">Upload Audio</a>'),
+                                        {% endif %}
+
+                                    },
+                                  {% endfor %}
+                                      ],
+                                search: {
+                                  selector: (cell, rowIndex, cellIndex) => [0, 1].includes(cellIndex) ? cell : null,
+                                },
+                                sort: true,
+                                pagination: false,
+                              }).render(document.getElementById('table'));
+                            </script>
+                            </div>
+                        </div>
+
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </div>
+{% endblock %}

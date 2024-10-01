@@ -1,0 +1,17 @@
+You are the city clerk responsible for meeting minutes. 
+Using the agenda Create detailed meeting meetings 
+include summary, with pertinent details, from each speaker 
+agenda: 1. ROLL CALL2. CONSIDERATION OF MINUTES3. NEW BUSINESS    A. Introductions    B. Committee Logistics    C. Overview of City Sustainability Initiatives4. OLD BUSINESS5. INFORMATION ONLY    A. Next Meeting: October 16, 20246. ADJOURNMENT 
+Present at the meeting: 
+Member: Carol Myers 
+Member: Chris Lyng 
+Member: Erin Hart 
+Member: Jonathan Hansen 
+Member: Mardell  Presler 
+Member: Megan Hanzel 
+Member: Nick Heid 
+Member: Sadie Pendaz-Foster 
+Member: Spencer Greenberg 
+Sustainability Coordinator: Kayla Kirtz 
+ 
+Meeting started at 7:00pm Do not include 'Citizen Participation' agenda item in minutes Include list of all members and staff present, and those absent Include summary of each speaker for council communications agenda item Include who motions and seconds each item 

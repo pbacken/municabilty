@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+    {% block content %}
+            <form method="POST">
+		    {{ form.hidden_tag() }}
+                                <table class="table">
+                                          <tbody>
+                                            <tr>
+                                              <td>Group</td>
+                                              <td>{{ form.group_code }}</td>
+                                            </tr>
+
+                                            <tr>
+                                              <td>Name</td>
+                                              <td>{{ form.member_first_name }} {{ form.member_last_name }}</td>
+                                            </tr>
+
+                                            <tr>
+                                               <td>
+                                                   Title
+                                                </td>
+                                                <td>
+                                                    {{ form.title }}
+                                                </td>
+
+                                            </tr>
+
+                                            <tr>
+                                                <td>Position</td>
+                                                <td>{{ form.position }}</td>
+
+                                            </tr>
+
+                                          </tbody>
+                                </table>
+                {{ form.submit(class="btn btn-secondary") }}
+
+
+    {% endblock %}

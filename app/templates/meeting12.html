@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% import "bootstrap_wtf.html" as wtf %}
+    {% block content %}
+        <div class="container bg-primary">
+            <div id="layoutAuthentication">
+                <div id="layoutAuthentication_content">
+                    <main>
+                        <div class="container-xl px-4">
+                            <div class="container">
+                              <!-- Content here -->
+                                <div class="row">
+                                    <div class="col">  <!-- First Card -->
+                                        <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                          <div class="card-body">
+                                              <h1 class="text-center">{{ current_user.user_city }}&nbsp{{ agenda['meet_type'] }}</h1>
+                                                <h4 class="text-center">{{ agenda['location'] }}</h4>
+                                                <h4 class="text-center">{{ agenda['date'] }}&nbsp{{ agenda['time'] }}</h4>
+                                                <br><br>
+                                                {% for each_section in agenda['sections'] %}
+                                                    {{ each_section['number'] }}. {{ each_section['title'] }} <br>
+                                                    {% if 'subitems' in each_section %}
+                                                        {% for each_sub in each_section['subitems'] %}
+                                                            &nbsp;&nbsp;&nbsp;{{ each_sub['number'] }}. {{ each_sub['title'] }}<br>
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                </br>
+                                                 {% endfor %}
+                                          </div>  <!-- Card Body End -->
+                                        </div>
+                                    </div>   <!-- First Card End -->
+                                    <div class="col">  <!-- second Card -->
+                                        <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                          <div class="card-body">
+                                              <h1 class="text-center">{{ current_user.user_city }}&nbsp{{ agenda['meet_type'] }}</h1>
+                                                <h4 class="text-center">{{ agenda['location'] }}</h4>
+                                                <h4 class="text-center">{{ agenda['date'] }}&nbsp{{ agenda['time'] }}</h4>
+                                                <br><br>
+                                              <form method="post" action="/meeting_process/{{agenda_id}}/{{meet_id}}" enctype="multipart/form-data">
+                                              <div class="row">
+                                                  <table class="table">
+                                                    <tbody>
+                                                        {{ form.csrf_token }}
+                                                        <tr>
+                                                            <td> {{ form.meet_type.label }}</td>
+                                                            <td> {{ form.meet_type }} </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                              </div> <!-- row end -->
+                                              <br>
+                                              <!-- Accordian Meeting Start -->
+                                               <div class="accordion" id="accordionMeeting">
+                                                    <div class="accordion-item"> <!-- Accordian Members/Staff Item Start -->
+                                                        <h2 class="accordion-header" id="headingPresent">
+                                                          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePresent" aria-expanded="false" aria-controls="collapsePresent">
+                                                            Officials Present
+                                                          </button>
+                                                        </h2>
+                                                        <div id="collapsePresent" class="accordion-collapse collapse" aria-labelledby="headingPresent" data-bs-parent="#accordionMeeting">
+                                                            <div class="accordion-body">
+                                                                <div class="row"> <!-- Row One Start -->
+                                                                    <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                                                        <div class="card-body">
+                                                                            <h6 class="card-title">Members</h6>
+                                                                            <div class="row">
+                                                                                <table class="table">
+                                                                                    <tbody>
+                                                                                        {% for variable_names in member_list_var %}
+                                                                                            <tr>
+                                                                                                    <td>
+                                                                                                        {{ variable_names }}
+                                                                                                    </td>
+                                                                                                    <td> {{ form[variable_names] }}</td>
+
+                                                                                            </tr>
+                                                                                            {% endfor %}
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>  <!-- Row One End -->
+
+                                                                <div class="row"> <!-- Row Two Start -->
+                                                                    <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                                                        <div class="card-body">
+                                                                            <h6 class="card-title">Staff</h6>
+                                                                            <div class="row">
+                                                                                <table class="table">
+                                                                                    <tbody>
+                                                                                        {% for variable_names in staff_list_var %}
+                                                                                            <tr>
+                                                                                                    <td>
+                                                                                                        {{ variable_names }}
+                                                                                                    </td>
+                                                                                                    <td> {{ form[variable_names] }}</td>
+
+                                                                                            </tr>
+                                                                                            {% endfor %}
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>  <!-- Row One End -->
+
+                                                            </div> <!-- Accordian Body End -->
+                                                        </div>
+                                                    </div>  <!-- Accordian One Item End -->
+
+                                                   <div class="accordion-item"> <!-- Accordian Consent Item Start -->
+                                                        <h2 class="accordion-header" id="headingConsentMotions">
+                                                          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConsentMotions" aria-expanded="false" aria-controls="collapseMotions">
+                                                            Consent Motions
+                                                          </button>
+                                                        </h2>
+                                                        <div id="collapseConsentMotions" class="accordion-collapse collapse" aria-labelledby="headingConsentMotions" data-bs-parent="#accordionMeeting">
+                                                            <div class="accordion-body">
+                                                                <div class="row"> <!-- Row One Start -->
+                                                                    <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                                                        <div class="card-body">
+                                                                            <h6 class="card-title">Consent Motion Assignment</h6>
+                                                                            <div class="row">
+                                                                                <table class="table">
+                                                                                    <tbody>
+                                                                                        {% for each_1 in consent_list_var %}
+                                                                                            {% for jj in each_1 %}
+                                                                                                {% for key in jj %}
+                                                                                                    {% if not '_2' in key %}
+                                                                                                        <tr class="fw-bolder">
+                                                                                                            <td colspan="2">
+                                                                                                                {{ jj[key] }}
+                                                                                                            </td>
+                                                                                                        </tr>
+                                                                                                            <tr>
+                                                                                                            <td> {{ form[key].label }}</td>
+                                                                                                            <td> {{ form[key] }}</td>
+                                                                                                            </tr>
+                                                                                                        {% else %}
+                                                                                                            <tr>
+                                                                                                            <td> {{ form[key].label }}</td>
+                                                                                                            <td> {{ form[key] }}</td>
+                                                                                                            </tr>
+                                                                                                    {% endif %}
+
+                                                                                                {% endfor %}
+                                                                                            {% endfor %}
+                                                                                        {% endfor %}
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>  <!-- Row One End -->
+                                                            </div> <!-- Accordian Body End -->
+                                                        </div>
+                                                    </div>  <!-- Accordian two Item End -->
+
+                                                   <div class="accordion-item"> <!-- Accordian Motions Item Start -->
+                                                        <h2 class="accordion-header" id="headingMotions">
+                                                          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMotions" aria-expanded="false" aria-controls="collapseMotions">
+                                                            Meeting Motions
+                                                          </button>
+                                                        </h2>
+                                                        <div id="collapseMotions" class="accordion-collapse collapse" aria-labelledby="headingMotions" data-bs-parent="#accordionMeeting">
+                                                            <div class="accordion-body">
+                                                                <div class="row"> <!-- Row One Start -->
+                                                                    <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                                                        <div class="card-body">
+                                                                            <h6 class="card-title">Motion Assignment</h6>
+                                                                            <div class="row">
+                                                                                <table class="table">
+                                                                                    <tbody>
+                                                                                        {% for each_1 in motions_list_var %}
+                                                                                            {% for jj in each_1 %}
+                                                                                                {% for key in jj %}
+                                                                                                    {% if not '_2' in key %}
+                                                                                                        <tr class="fw-bolder">
+                                                                                                            <td colspan="2">
+                                                                                                                {{ jj[key] }}
+                                                                                                            </td>
+                                                                                                        </tr>
+                                                                                                            <tr>
+                                                                                                            <td> {{ form[key].label }}</td>
+                                                                                                            <td> {{ form[key] }}</td>
+                                                                                                            </tr>
+                                                                                                        {% else %}
+                                                                                                            <tr>
+                                                                                                            <td> {{ form[key].label }}</td>
+                                                                                                            <td> {{ form[key] }}</td>
+                                                                                                            </tr>
+                                                                                                    {% endif %}
+
+                                                                                                {% endfor %}
+                                                                                            {% endfor %}
+                                                                                        {% endfor %}
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>  <!-- Row One End -->
+                                                            </div> <!-- Accordian Body End -->
+                                                        </div>
+                                                    </div>  <!-- Accordian two Item End -->
+
+
+                                               </div> <!-- Accordian Meeting End -->
+                                                  <br> <br>
+                                                  <button type="submit" class="btn btn-primary">Submit</button>
+                                                  <a class="btn btn-secondary" href="{{ url_for('index') }}" role="button">Cancel</a>
+                                              </form>
+
+                                          </div>  <!-- Second Card Body End -->
+                                        </div>
+                                    </div> <!-- Second Card End -->
+
+                                </div>   <!-- End Row -->
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </div>
+{% endblock %}

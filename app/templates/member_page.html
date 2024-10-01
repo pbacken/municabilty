@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+    {% block content %}
+        <div class="container bg-primary">
+            <div id="layoutAuthentication">
+                <div id="layoutAuthentication_content">
+                    <main>
+                    <header class="page-header page-header-dark bg-gradient-primary-to-secondary pb-10">
+                        <div class="container-xl px-4">
+                            <div class="page-header-content pt-4">
+                                <div class="row align-items-center justify-content-between">
+                                    <div class="col-auto mt-4">
+                                        <h1 class="page-header-title">
+                                            <div class="page-header-icon"><i data-feather="users"></i></div>
+                                            {{current_user.user_city}} Member Info
+                                        </h1>
+                                        <div class="page-header-subtitle">View and Edit</div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+                    <!-- Main page content-->
+                    <div class="container-xl px-4 mt-n10">
+                        <div class="row">
+                            <div class="card mb-8">
+
+                            <div class="card-header">
+                            <ul class="nav justify-content-end">
+                              <li class="nav-item">
+                                <a class="btn btn-primary btn-sm" href="/member/edit/{{ member.EntityMembers.id }}" role="button">Edit</a>
+                                <a class="btn btn-danger btn-sm" href="#" role="button">Delete</a>
+                              </li>
+                            </ul>
+                                 <div class="h3">{{member.title}} {{ member.member_first_name}} {{ member.member_last_name}}</div>
+
+                            </div>
+
+                            <div class="card-body">
+                                <table class="table">
+                                          <tbody>
+                                            {{ form.csrf_token }}
+                                            <tr>
+                                              <td>{{ form.group_code.label}}</td>
+                                              <td>{{ member.EntityGroups.group_type }}</td>
+                                            </tr>
+
+                                            <tr>
+                                              <td>Name</td>
+                                              <td>{{ member.EntityMembers.member_first_name }} {{ member.EntityMembers.member_last_name }}</td>
+                                            </tr>
+
+                                            <tr>
+                                               <td>
+                                                    {{ form.title.label }}
+                                                </td>
+                                                <td>
+                                                    {{ member.EntityMembers.title }}
+                                                </td>
+
+                                            </tr>
+
+                                            <tr>
+                                                <td>{{ form.position.label }}</td>
+                                                <td>{{ member.EntityMembers.position }}</td>
+
+                                            </tr>
+                                            <tr>
+                                                <td>{{ form.start_date.label }}</td>
+                                                <td>{{ start_date }}</td>
+
+                                            </tr>
+                                            <tr>
+                                                <td>{{ form.end_date.label }}</td>
+                                                <td>{{ end_date }}</td>
+
+                                            </tr>
+                                          </tbody>
+                                </table>
+
+                            </div> <!-- end card body -->
+
+                        </div>
+                        </div>
+                    </div>
+                    </main>
+
+                </div>
+            </div>
+        </div>
+{% endblock %}

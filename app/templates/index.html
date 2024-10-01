@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container-xl px-4 mt-4">
+        <header class="py-10 mb-4 bg-gradient-primary-to-secondary">
+            <div class="container-xl px-4">
+                <div class="text-center">
+                    <h1 class="text-white">Welcome to Sunfish</h1>
+                    <p class="lead mb-0 text-white-50">Meeting Minutes Made Easy</p>
+                </div>
+            </div>
+        </header>
+
+    <!-- Main page content-->
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <!-- Knowledge base category card 1-->
+                <a class="card lift lift-sm h-100" href="{{ url_for('create_meeting') }}">
+                    <div class="card-body py-5">
+                        <h5 class="card-title text-primary mb-2">
+                            <i class="me-2" data-feather="edit"></i>
+                            Create a New Meeting
+                        </h5>
+                        <p class="card-text">Create a new meeting, upload your agenda</p>
+
+                    </div>
+
+                </a>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <!-- Knowledge base category card 2-->
+                <a class="card lift lift-sm h-100" href="{{ url_for('meeting_list') }}">
+                    <div class="card-body py-5">
+                        <h5 class="card-title text-yellow mb-2">
+                            <i class="me-2" data-feather="list"></i>
+                            Meeting List
+                        </h5>
+                        <p class="card-text">View upcoming and previous meetings</p>
+                    </div>
+
+                </a>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <!-- Knowledge base category card 3-->
+                <a class="card lift lift-sm h-100" href="#!">
+                    <div class="card-body py-5">
+                        <h5 class="card-title text-teal mb-2">
+                            <i class="me-2" data-feather="users"></i>
+                            Account / Profile
+                        </h5>
+                        <p class="card-text">Account and Profile settings, add users</p>
+                    </div>
+
+                </a>
+            </div>
+        </div>
+    </div>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Default Bootstrap Modal</h5>
+                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Test
+
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button><button class="btn btn-primary" type="button">Save changes</button></div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
