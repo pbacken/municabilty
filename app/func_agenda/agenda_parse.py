@@ -9,7 +9,7 @@ from app.func_agenda.query_func import get_motion_votes
 
 
 def agenda_temp():
-    agenda = {"meet_type": "City Council Meeting", "date": "September 3, 2024", "time": "7:00 PM", "location": "4100 Lakeview Avenue North, Robbinsdale, MN", "sections": [{"number": 1, "title": "CITY COUNCIL MEETING CALLED TO ORDER"}, {"number": 2, "title": "ROLL CALL", "subitems": [{"number": "A", "title": "Wagner"}, {"number": "B", "title": "Murphy"}, {"number": "C", "title": "Greenberg"}, {"number": "D", "title": "Parisian"}, {"number": "E", "title": "Mayor Blonigan"}]}, {"number": 3, "title": "MICROPHONE CHECK", "subitems": [{"number": "A", "title": "Wagner"}, {"number": "B", "title": "Murphy"}, {"number": "C", "title": "Greenberg"}, {"number": "D", "title": "Parisian"}, {"number": "E", "title": "Mayor Blonigan"}]}, {"number": 4, "title": "OPPORTUNITY FOR THE PUBLIC TO ADDRESS THE CITY COUNCIL ON MATTERS NOT ON THE AGENDA"}, {"number": 5, "title": "APPROVAL OF THE SEPTEMBER 3, 2024 MEETING AGENDA"}, {"number": 6, "title": "CONSENT AGENDA", "subitems": [{"number": "A", "title": "Approve Special City Council Meeting minutes from July 9, 2024"}, {"number": "B", "title": "Receive Parks, Recreation, and Forestry Commission minutes from June 25, 2024"}, {"number": "C", "title": "Deputy Registrar\u2019s Monthly Financial Statements"}, {"number": "D", "title": "Robbinsdale Wine & Spirits\u2019 Monthly Financial Statements"}, {"number": "E", "title": "Quarterly Financial Information for General, Water, Sanitary Sewer, Storm Sewer, and Solid Waste"}, {"number": "F", "title": "Scheduling Public Hearing on October 1, 2024, to Certify the Assessment Roll for Unpaid Administrative Penalties"}, {"number": "G", "title": "Scheduling Public Hearing on October 1, 2024, to Certify the Assessment Roll for Delinquent Utilities"}, {"number": "H", "title": "Scheduling Public Hearing on October 1, 2024, to Certify the Assessment Roll for Emergency Water, Sewer, and Sump Pump Repairs"}, {"number": "I", "title": "Approval of Licenses"}, {"number": "J", "title": "UNCF Walk for Education"}, {"number": "K", "title": "Faith Chapel Event"}]}, {"number": 7, "title": "PRESENTATIONS", "subitems": [{"number": "A", "title": "LMC Legislators of Distinction - Senator Rest, Representative Freiberg"}]}, {"number": 8, "title": "PUBLIC HEARINGS", "subitems": [{"number": "A", "title": "Public Hearing to receive feedback on the Blue Line Light Rail Extension"}]}, {"number": 9, "title": "OLD BUSINESS", "subitems": [{"number": "A", "title": "Consider Consumption and Display Permit for 4130 Lakeland"}]}, {"number": 10, "title": "NEW BUSINESS", "subitems": [{"number": "A", "title": "None"}]}, {"number": 11, "title": "OTHER BUSINESS", "subitems": [{"number": "A", "title": "Voucher Requests Pending Approval for Disbursement"}]}, {"number": 12, "title": "ADMINISTRATIVE REPORTS"}, {"number": 13, "title": "COUNCIL GENERAL COMMUNICATIONS"}, {"number": 14, "title": "ADJOURNMENT"}]}
+    agenda = {{"meet_type": "City Council Meeting", "date": "March 19, 2024", "time": "7:00 PM", "location": "4100 Lakeview Avenue North, Robbinsdale, MN", "sections": [{"number": 1, "title": "CITY COUNCIL MEETING CALLED TO ORDER"}, {"number": 2, "title": "ROLL CALL", "subitems": [{"number": "A", "title": "Wagner"}, {"number": "B", "title": "Murphy"}, {"number": "C", "title": "Parisian"}, {"number": "D", "title": "Mayor Blonigan"}]}, {"number": 3, "title": "MICROPHONE CHECK", "subitems": [{"number": "A", "title": "Parisian"}, {"number": "B", "title": "Wagner"}, {"number": "C", "title": "Murphy"}, {"number": "D", "title": "Mayor Blonigan"}]}, {"number": 4, "title": "OPPORTUNITY FOR THE PUBLIC TO ADDRESS THE CITY COUNCIL ON MATTERS NOT ON THE AGENDA"}, {"number": 5, "title": "APPROVAL OF THE MARCH 19, 2024 MEETING AGENDA"}, {"number": 6, "title": "CONSENT AGENDA", "subitems": [{"number": "A", "title": "Approve City Council Meeting Minutes of February 6, 2024"}, {"number": "B", "title": "Farmers Market Memorandum of Understanding"}, {"number": "C", "title": "Approval of Credit Card Charges and Payment \u2013 February 2024"}, {"number": "D", "title": "Authorize City Manager to Execute Organized Labor Agreement"}, {"number": "E", "title": "Mobile Food Unit in Robin Center"}, {"number": "F", "title": "DNR No Child Left Inside Grant Acceptance"}, {"number": "G", "title": "Approval of Licenses"}]}, {"number": 7, "title": "PRESENTATIONS", "subitems": [{"number": "A", "title": "Hennepin County District Court Chief Judge Kerry Meyer"}]}, {"number": 8, "title": "PUBLIC HEARINGS", "subitems": [{"number": "A", "title": "None"}]}, {"number": 9, "title": "OLD BUSINESS", "subitems": [{"number": "A", "title": "Authorize City Manager to Execute License Agreement with Birdhouse Restaurant"}, {"number": "B", "title": "Authorize Wicked Wort to expand their current liquor license to include additional space"}]}, {"number": 10, "title": "NEW BUSINESS", "subitems": [{"number": "A", "title": "Authorize City Manager to execute a Professional Services Agreement with Bolton & Menk, Inc"}, {"number": "B", "title": "Consider Support for HF 4182 - Equal Broadband Act"}]}, {"number": 11, "title": "OTHER BUSINESS", "subitems": [{"number": "A", "title": "Voucher Requests Pending Approval for Disbursement"}]}, {"number": 12, "title": "ADMINISTRATIVE REPORTS"}, {"number": 13, "title": "COUNCIL GENERAL COMMUNICATIONS"}, {"number": 14, "title": "ADJOURNMENT"}]}}
 
     return agenda
 
@@ -60,8 +60,6 @@ def openai_agenda(agenda_doc):
 
         print("PDF read done.")
 
-        # print(text_extract)
-
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
         response_format={"type": "json_object"},
@@ -108,9 +106,11 @@ def create_motion_list(agenda):
     cl_sm = {}
 
     section_master_list = ['approval of the', 'consent agenda', 'public hearings',
-                   'old business', 'new business', 'other business', 'adjournment', 'information only']
+                           'old business', 'new business', 'other business', 'adjournment', 'information only']
 
-    # meetings_list = [("", "Choose Meeting Type")] + [(i.group_code, i.group_type) for i in meeting_type]
+    if 'work session' in agenda['meet_type'].casefold():
+        print(f"found Work session:  {agenda['meet_type'].casefold()}")
+        return motion_list_labels, motion_list_full, consent_list_labels, consent_list_full, ml_sm, cl_sm
 
     for each_section in agenda['sections']:
         for master in section_master_list:
@@ -135,9 +135,9 @@ def create_motion_list(agenda):
                             cl_sm_list.append(f"{each_section['number']}{each_sub['number']}")
                         cl_sm[each_section['title'].casefold()] = cl_sm_list
                     else:
+                        ml_sm_list = []
                         for each_sub in each_section['subitems']:
                             if not each_sub['title'].casefold() == 'none':
-                                ml_sm_list = []
                                 motion_list_labels.append(str(each_section['number']) + str(each_sub['number']))
                                 motion_list_labels.append(str(each_section['number']) + str(each_sub['number']+'_2'))
                                 motion_list_full.append([{str(each_section['number']) + str(each_sub['number']): each_sub['title']},
@@ -169,39 +169,53 @@ def updated_agenda(agenda, meet_id):
 
     motion_list_labels, motion_list_full, consent_list_labels, consent_list_full, ml_sm, cl_sm = create_motion_list(agenda)
 
+    print(f" ml_sm:  {ml_sm}")
     motion_votes = get_motion_votes(meet_id)
+    print(f"motion votes: {motion_votes}")
     mot_call = {}
+
     for motion in motion_votes:
         full_name = f"{motion.EntityMembers.member_first_name} {motion.EntityMembers.member_last_name}"
         mot_call[motion.MeetingMotionVotes.motion_id] = full_name
 
+    print(f"mot_call: {mot_call}")
     agenda_votes = ""
+
     for each_section in agenda['sections']:
-        motion_info = ''
         # print(f"{each_section['number']}. {each_section['title']}")
         agenda_votes += f"{each_section['number']}. {each_section['title']}"
-        if 'subitems' in each_section:
-            for each_sub in each_section['subitems']:
-                sub_title_info = f"    {each_sub['number']}. {each_sub['title']}"
-                # print(f"    {each_sub['number']}. {each_sub['title']}")
-                agenda_votes += f"    {each_sub['number']}. {each_sub['title']}"
-                if each_section['title'].casefold() in ml_sm:
-                    for ss in ml_sm[each_section['title'].casefold()]:
-                        if ss == f"{each_section['number']}{each_sub['number']}":
-                            # print(f"    Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']}")
-                            agenda_votes += f"    (Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']})"
-                if each_section['title'].casefold() in cl_sm:
-                    consent_motion_info = ''
-                    for ss in cl_sm[each_section['title'].casefold()]:
-                        if ss in mot_call:
+        if each_section['title'].casefold() in ml_sm:
+            # check if consent
+            if 'consent' in each_section['title'].casefold():
+                # print(f"Motion by: {mot_call[ml_sm[each_section['title'].casefold()][0]]} "
+                      # f"/  Seconded: {mot_call[ml_sm[each_section['title'].casefold()][0] + '_2']}")
+                agenda_votes += f"Motion by: {mot_call[ml_sm[each_section['title'].casefold()][0]]} /  Seconded: {mot_call[ml_sm[each_section['title'].casefold()][0] + '_2']}"
+            # check if each_section has subitems
+            if 'subitems' in each_section:
+                for each_sub in each_section['subitems']:
+                    # print(f"    {each_sub['number']}. {each_sub['title']}")
+                    agenda_votes += f"    {each_sub['number']}. {each_sub['title']}"
+                    if each_section['title'].casefold() in ml_sm:
+                        for ss in ml_sm[each_section['title'].casefold()]:
                             if ss == f"{each_section['number']}{each_sub['number']}":
-                                # print(f"    Item pulled. Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']}")
-                                agenda_votes += f"    (Item pulled. Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']})"
-        else:
-            if each_section['title'].casefold() in ml_sm:
-                for ss in ml_sm[each_section['title'].casefold()]:
-                    # print(f"Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']}")
-                    agenda_votes += f"(Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']})"
+                                # print(f"    Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']}")
+                                if ss in mot_call:
+                                    agenda_votes += f"    (Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']})"
+                    if each_section['title'].casefold() in cl_sm:
+                        consent_motion_info = ''
+                        for ss in cl_sm[each_section['title'].casefold()]:
+                            if ss in mot_call:
+                                if ss == f"{each_section['number']}{each_sub['number']}":
+                                    # print(
+                                        #f"    Item pulled. Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']}")
+                                    agenda_votes += f"    (Item pulled for discussion. Motion by: {mot_call[ss]}  /  Seconded: {mot_call[ss + '_2']})"
+            else:
+                if ml_sm[each_section['title'].casefold()]:
+                    # print(f"Motion by: {mot_call[ml_sm[each_section['title'].casefold()][0]]} "
+                          # f"/  Seconded: {mot_call[ml_sm[each_section['title'].casefold()][0] + '_2']}")
+                    for ss in ml_sm[each_section['title'].casefold()]:
+                        if ss in mot_call:
+                            agenda_votes += f"Motion by: {mot_call[ml_sm[each_section['title'].casefold()][0]]} /  Seconded: {mot_call[ml_sm[each_section['title'].casefold()][0] + '_2']}"
 
     return agenda_votes
 

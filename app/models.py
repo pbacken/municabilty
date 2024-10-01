@@ -112,6 +112,8 @@ class EntityMembers(db.Model):
     entity_code: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
     title: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
     position: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    start_date: so.Mapped[datetime] = so.mapped_column(sa.DateTime, nullable=True)
+    end_date: so.Mapped[datetime] = so.mapped_column(sa.DateTime, nullable=True)
 
 
 class EntityName(db.Model):
@@ -119,4 +121,9 @@ class EntityName(db.Model):
     entity_name: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
     entity_code: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
 
+
+class PromptInfo(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    prompt_file: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
+    meeting_id: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
 

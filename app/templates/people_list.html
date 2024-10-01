@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "bootstrap_wtf.html" as wtf %}
     {% block content %}
         <div class="container bg-primary">
             <div id="layoutAuthentication">
@@ -22,7 +23,13 @@
                     <!-- Main page content-->
                     <div class="container-xl px-4 mt-n10">
                         <div class="card mb-4">
-                            <div class="card-header">{{ current_user.user_city }} Officials</div>
+                            <div class="card-header">
+                                <div class="row">
+                                    <div class="col-md-10">{{ current_user.user_city }} Officials</div>
+                                    <div class="col-md-2"><button class="btn btn-primary btn-sm float-right"
+                                                                  data-bs-toggle="modal" data-bs-target="#addMemberModal">Add Member</button></div>
+                                </div>
+                            </div>
                             <div class="card-body">
                                 <div id="table"></div>
                                 </div>
@@ -31,29 +38,32 @@
                             <script>
                               new gridjs.Grid({
                                 columns: [
-                                  { id: 'first_name', name: 'First Name' },
-                                  { id: 'last_name', name: 'Last Name' },
+                                  { id: 'name', name: 'Name' },
                                   {id: 'group', name: 'Group' },
                                   { id: 'person_title', name: 'Title' },
-                                  { id: 'person_position', name: 'Position', sort: false }
+                                  { id: 'person_position', name: 'Position', sort: false },
+                                    {id: 'hid_first', hidden: true},
+                                    {id: 'hid_last', hidden: true}
+
                                 ],
                                 data: [
                                   {% for people in people_list %}
                                     {
-                                      first_name: '{{ people.member_first_name }}',
-                                      last_name: '{{ people.member_last_name }}',
-                                      group: '{{ people.group_code}}',
-                                      person_title: '{{ people.title}}',
-                                      person_position: '{{ people.position}}'
-
+                                      name: gridjs.html('<a href="/member/{{ people.EntityMembers.id }}">{{ people.EntityMembers.member_first_name }} {{ people.EntityMembers.member_last_name }}</a>'),
+                                      group: '{{ people.EntityGroups.group_type}}',
+                                      person_title: '{{ people.EntityMembers.title}}',
+                                      person_position: '{{ people.EntityMembers.position}}',
+                                      hid_first: '{{ people.EntityMembers.member_first_name }}',
+                                        hid_last: '{{ people.EntityMembers.member_last_name }}'
                                     },
                                   {% endfor %}
                                       ],
                                 search: {
-                                  selector: (cell, rowIndex, cellIndex) => [0, 1, 2, 3].includes(cellIndex) ? cell : null,
+                                  selector: (cell, rowIndex, cellIndex) => [1, 2, 3, 4, 5].includes(cellIndex) ? cell : null,
+                                  ignoreHiddenColumns: false
                                 },
                                 sort: true,
-                                pagination: false,
+                                pagination: true,
                               }).render(document.getElementById('table'));
                             </script>
                             </div>
@@ -65,4 +75,63 @@
                 </div>
             </div>
         </div>
+
+    <!-- Modal -->
+<div class="modal fade" id="addMemberModal" tabindex="-1" aria-labelledby="addMemberLabel" aria-hidden="true">
+    <form method="post" action="/people_list" enctype="multipart/form-data">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addMemberLabel">Add Member</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+
+          <table class="table">
+              <tbody>
+                {{ form.csrf_token }}
+                <tr>
+                    <td>{{ form.group_code.label}}</td>
+                    <td>{{ form.group_code }}</td>
+                </tr>
+                <tr>
+                    <td>{{ form.member_first_name.label }}</td>
+                    <td>{{ form.member_last_name.label }}</td>
+                </tr>
+
+                <tr>
+                    <td>{{ form.member_first_name }}</td>
+                    <td>{{ form.member_last_name }}</td>
+                </tr>
+                <tr>
+                    <td>
+                        {{ form.title.label }}
+                    </td>
+                    <td>
+                        {{ form.position.label }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>{{ form.title }}<p class="text-xs">Mayor, Member, Chair, etc</p></td>
+                    <td>{{ form.position }}<p class="text-xs">Mayor, Ward 1, At-Large, etc</p></td>
+                </tr>
+
+              </tbody>
+
+
+          </table>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="submit" name='create' class="btn btn-sm btn-primary">Save Changes</button>
+
+      </div>
+
+    </div>
+  </div>
+  </form>
+</div>
+
 {% endblock %}

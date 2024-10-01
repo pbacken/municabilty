@@ -61,7 +61,7 @@
     {{ dropzone.config(custom_options="success: function(file, response) {
         var myModal = new bootstrap.Modal(document.getElementById('spinModal'));
         myModal.show();
-        window.location.href = '//'+file.name;
+        window.location.href = '/process_agenda/'+file.name;
         }")
     }}
 {% endblock %}

@@ -22,7 +22,13 @@
                     <!-- Main page content-->
                     <div class="container-xl px-4 mt-n10">
                         <div class="card mb-4">
-                            <div class="card-header">{{ current_user.user_city }} Groups</div>
+                            <div class="card-header">
+                                <div class="row">
+                                    <div class="col-md-10">{{ current_user.user_city }} Groups</div>
+                                    <div class="col-md-2"><button class="btn btn-primary btn-sm float-right"
+                                                                  data-bs-toggle="modal" data-bs-target="#addGroupModal">Add Group</button></div>
+                                </div>
+                            </div>
                             <div class="card-body">
                                 <div id="table"></div>
                                 </div>
@@ -33,17 +39,20 @@
                                 columns: [
                                   { id: 'group_type', name: 'Group Type' },
                                   { id: 'group_code', name: 'Group Code' },
+                                  {id: 'hid_type', hidden: true}
                                 ],
                                 data: [
                                   {% for city_group in city_group_list %}
                                     {
-                                      group_type: '{{ city_group.group_type }}',
-                                      group_code: '{{ city_group.group_code }}'
+                                      group_type: gridjs.html('<a href="/group/{{ city_group.id }}">{{ city_group.group_type }}</a>'),
+                                      group_code: '{{ city_group.group_code }}',
+                                      hid_type: '{{ city_group.group_type }}',
                                     },
                                   {% endfor %}
                                       ],
                                 search: {
                                   selector: (cell, rowIndex, cellIndex) => [0, 1].includes(cellIndex) ? cell : null,
+                                  ignoreHiddenColumns: false
                                 },
                                 sort: true,
                                 pagination: false,
@@ -58,4 +67,41 @@
                 </div>
             </div>
         </div>
+
+   <!-- Modal -->
+<div class="modal fade" id="addGroupModal" tabindex="-1" aria-labelledby="addGroupLabel" aria-hidden="true">
+    <form method="post" action="/group_list" enctype="multipart/form-data">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addMemberLabel">Add Group</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+
+          <table class="table">
+              <tbody>
+                {{ form.csrf_token }}
+                <tr>
+                    <td>{{ form.group_type.label}}</td>
+                    <td>{{ form.group_type }}</td>
+                </tr>
+                <tr>
+                    <td>{{ form.group_code.label}}</td>
+                    <td>{{ form.group_code}}</td>
+                </tr>
+              </tbody>
+          </table>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="submit" name='group' class="btn btn-sm btn-primary">Save Changes</button>
+
+      </div>
+
+    </div>
+  </div>
+  </form>
+</div>
 {% endblock %}

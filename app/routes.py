@@ -1,12 +1,15 @@
 import json
 
 import sqlalchemy as sa
+from sqlalchemy.exc import SQLAlchemyError
 import os
 import uuid
+import asyncio
 from app import app, db
 from app.email import send_password_reset_email
 from app.forms import LoginForm, RegistrationForm, EditProfileForm, ResetPasswordRequestForm, \
-    ResetPasswordForm, MeetingForm, MembersPresentForm, UpdateAgendaForm, EditMinutesForm, DiaryForm
+    ResetPasswordForm, MeetingForm, MembersPresentForm, UpdateAgendaForm, EditMinutesForm, DiaryForm, \
+    EntityMemberForm, EntityGroupForm
 from app.models import User, EntityName, EntityMembers, EntityGroups, MeetingAttendance, MeetingInfo, MeetingMotionItems, MeetingMotionVotes
 from datetime import datetime, timezone
 from flask import render_template, flash, redirect, url_for, request, session, copy_current_request_context, abort
@@ -21,7 +24,7 @@ from flask_wtf.file import MultipleFileField, FileRequired
 from werkzeug.utils import secure_filename
 from app.func_agenda.agenda_parse import openai_agenda, to_pretty_json, agenda_temp, create_motion_list, updated_agenda
 from app.func_agenda.form_config import file_list_form_builder, diary_speaker_list
-from app.func_agenda.meeting_processing import create_prompt
+from app.func_agenda.meeting_processing import create_prompt, create_minutes
 import csv
 from collections import namedtuple
 from wtforms import SubmitField
@@ -39,8 +42,8 @@ app.config.update(
                              '<br>Click to Browse',
     DROPZONE_ENABLE_CSRF=True,
     DROPZONE_ALLOWED_FILE_CUSTOM=True,
-    DROPZONE_ALLOWED_FILE_TYPE='.pdf',
-    DROPZONE_MAX_FILE_SIZE=100,
+    DROPZONE_ALLOWED_FILE_TYPE='.pdf, .mp3, .m4a, .mp4',
+    DROPZONE_MAX_FILE_SIZE=3000,
     # DROPZONE_UPLOAD_ON_CLICK=True,
     # DROPZONE_IN_FORM=True,
     # DROPZONE_UPLOAD_ACTION='handle_upload',  # URL or endpoint
@@ -218,7 +221,6 @@ def create_meeting_old():
 def create_meeting():
 
     return render_template('meeting.html', title='Create Meeting')
-    # return render_template('dz_test.html', title='Create Meeting')
 
 
 @app.route('/upload_audio/<meet_id>', methods=['GET'])
@@ -243,7 +245,8 @@ def handle_upload():
         f.save(os.path.join(new_path, filename))
 
     # return '', 204
-    return render_template('process-agenda.html', filename=filename)
+    return render_template("index.html")
+    # return render_template("process_agenda.html", filename=filename)
 
 
 @app.route('/upload_audio_file/<meet_id>', methods=['POST'])
@@ -254,10 +257,18 @@ def handle_upload_audio_file(meet_id):
     filename = secure_filename(f.filename)
     new_path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/audio"
 
-    audio_file = db.session.query(MeetingInfo).filter(MeetingInfo.audio_name == secure_filename(filename)).first()
-    if audio_file is not None:
-        pass
-    else:
+    print(f"Meet ID: {meet_id} / Filename: {filename}")
+    audio_file = db.session.query(MeetingInfo).filter((MeetingInfo.id == meet_id) &
+                                                      (MeetingInfo.audio_name == secure_filename(filename))).all()
+
+
+    # new_meet_id = 2
+    # audio_file = db.session.query(MeetingInfo).filter(MeetingInfo.id == new_meet_id).first()
+    print(f"Audio File: {audio_file}")
+    # print(f"Audio Name: {audio_file.audio_name}")
+
+    if not audio_file:
+        print("audio_file name not found")
         if filename != '':
             if not os.path.exists(new_path):
                 os.makedirs(new_path)
@@ -267,11 +278,14 @@ def handle_upload_audio_file(meet_id):
         meeting = MeetingInfo.query.get(meet_id)
         meeting.audio_name = filename
         db.session.commit()
+    else:
+        print("audio_file found")
+        pass
 
     return render_template('meeting_list.html', filename=filename)
 
 
-@app.route('/process-agenda/<filename>')
+@app.route('/process_agenda/<filename>')
 def process_agenda_function(filename):
     new_path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/json"
 
@@ -372,11 +386,15 @@ def meeting_process(agenda_id, meet_id):
             'position': member.position
         }
 
-    print(f"Staff Select List: {staff_select_list}")
-    print(f"Member Select List: {member_select_list}")
+    # print(f"Staff Select List: {staff_select_list}")
+    # print(f"Member Select List: {member_select_list}")
     motion_list_labels, motion_list_full, consent_list_labels, consent_list_full, ml_sm, cl_sm = create_motion_list(agenda)
     form, member_list_var = file_list_form_builder(members, meetings_list, meet_default, staff_select_list, motion_list_full,
                                                    member_select_list, consent_list_full)
+
+    print(f"Motion List Labels: {motion_list_labels}")
+    print(f"Motion List Full: {motion_list_full}")
+    print(f"ml_sm: {ml_sm}")
 
     motion = db.session.query(MeetingMotionItems).filter(MeetingMotionItems.meeting_id == meet_id).first()
     if motion is not None:
@@ -412,8 +430,6 @@ def meeting_process(agenda_id, meet_id):
             if not var_name.id == 'submit':
                 if 'checked' in str(var_name):
                     if str(var_name.name) in member_list_var:
-                        print(f"Name: {var_name.name} Id: {member_dict[var_name.name]['id']}")
-                        print(f"Name: {var_name.name} Id: {member_dict[var_name.name]}")
                         members_list.append(var_name.name)
                         member_attendance_save.append(MeetingAttendance(entity_code=current_user.user_city_code,
                                                              meeting_id=meet_id,
@@ -438,9 +454,6 @@ def meeting_process(agenda_id, meet_id):
                                                              member_present='n'))
                 if var_name.name in motion_list_labels or var_name.name in consent_list_labels:
                     if not var_name.data == 'Select Member' or var_name.data == 'NA':
-                        print(f"Name: {var_name.data}")
-                        print(f"Id: {member_dict[var_name.data]['id']}")
-                        print(f"Name: {var_name.data} Id: {member_dict[var_name.data]['id']}")
                         motion_callers[var_name.id] = var_name.data
                         motion_approve.append(MeetingMotionVotes(entity_code=current_user.user_city_code,
                                                                  meeting_id=meet_id,
@@ -450,12 +463,10 @@ def meeting_process(agenda_id, meet_id):
         db.session.bulk_save_objects(member_attendance_save)
         db.session.bulk_save_objects(motion_approve)
         db.session.commit()
-        print(members_list)
-        print(staff_present)
         print(f"Motion Callers: {motion_callers}")
-        print(member_dict)
 
-        return render_template('meeting_list.html')
+        return redirect(url_for('meeting_list'))
+        # return render_template('meeting_list.html')
 
     return render_template('meeting12.html', form=form, agenda=agenda, member_list_var=member_list_var,
                            motions_list_var=motion_list_full, staff_list_var=staff_select_list, agenda_id=agenda_id,
@@ -463,14 +474,18 @@ def meeting_process(agenda_id, meet_id):
 
 
 # this route includes minutes, and diarization
-@app.route('/review_minutes', methods=['GET', 'POST'])
-def review_minutes():
-    meeting = db.session.query(MeetingInfo).filter(MeetingInfo.id == 1).first()
+@app.route('/review_minutes/<meet_id>', methods=['GET', 'POST'])
+def review_minutes(meet_id):
+    meeting = db.session.query(MeetingInfo).filter(MeetingInfo.id == meet_id).first()
 
     agenda_path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/json"
     minutes_path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/minutes"
-    minutes_file = open(f"{minutes_path}/rob_cc_022024_summary.txt", "r")
-    diary_file = open(f"{minutes_path}/rob_cc_022024_diarization.txt", "r")
+
+    minutes_file = open(f"{minutes_path}/{meeting.meeting_minutes}_summary.txt", "r")
+    diary_file = open(f"{minutes_path}/{meeting.meeting_minutes}_diary.txt", "r")
+    # minutes_file = open(f"{minutes_path}/rob_cc_022024_summary.txt", "r")
+    # diary_file = open(f"{minutes_path}/rob_cc_022024_diarization.txt", "r")
+
 
     form = EditMinutesForm()
     form.content.data = minutes_file.read().replace('\n', '<br />')
@@ -507,9 +522,10 @@ def preview_edit_diary(meet_id):
     minutes_path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/minutes"
     file = open(f"{minutes_path}/rob_cc_022024_diarization.txt", "r")
 
-    officials_list = db.session.query(EntityMembers, MeetingAttendance).filter(
-        MeetingAttendance.id == '1',).filter(MeetingAttendance.member_id == EntityMembers.id,).filter(
-        MeetingAttendance.member_present == 'y').all()
+    officials_list = db.session.query(EntityMembers, MeetingAttendance).\
+        filter(MeetingAttendance.id == '1',).\
+        filter(MeetingAttendance.member_id == EntityMembers.id,).\
+        filter(MeetingAttendance.member_present == 'y').all()
 
     for official in officials_list:
 
@@ -530,14 +546,24 @@ def preview_edit_diary(meet_id):
     return render_template('preview_edit_diary.html', diary=list_diary)
 
 
-@app.route('/process_minutes/<meet_id>')
+@app.route('/create_minutes/<meet_id>')
 def process_audio(meet_id):
     # Get Meeting Object
     meeting = MeetingInfo.query.get(meet_id)
+    print("get meeting object")
+
+    # Create Prompt
+    prompt = create_prompt(meet_id, meeting)
+    print("create prompt done")
+    print(prompt)
 
     # process Minutes
+    print('processing minutes')
+    minutes = create_minutes(prompt, meeting)
+    print(f"minutes: { minutes }")
 
-    return render_template('meeting_list.html')
+    return redirect(url_for('meeting_list'))
+    # return render_template('meeting_list.html')
 
 
 @app.route('/meeting_list')
@@ -546,34 +572,161 @@ def meeting_list():
     # get all meetings
     meeting_list = db.session.query(MeetingInfo).filter((MeetingInfo.meeting_entity == current_user.user_city_code)).all()
 
-    for meeting in meeting_list:
-        print(f"{meeting.id} / {meeting.meeting_type} / {meeting.meeting_date} / {meeting.meeting_agenda}")
+    # print(f"{meeting.id} / {meeting.meeting_type} / {meeting.meeting_date} / {meeting.meeting_agenda}")
 
     return render_template('meeting_list.html', meeting_list=meeting_list)
 
 
-@app.route('/people_list')
+@app.route('/people_list', methods=['GET', 'POST'])
 def people_list():
 
-    # get all meetings
-    people_list = db.session.query(EntityMembers).filter((EntityMembers.entity_code == current_user.user_city_code)).all()
+    form = EntityMemberForm()
 
-    #for people in people_list:
-    #    print(f"{people.id} / {people.meeting_type} / {meeting.meeting_date} / {meeting.meeting_agenda}")
+    # get all people
+    people_list = db.session.query(EntityMembers, EntityGroups).\
+        filter(EntityMembers.entity_code == current_user.user_city_code).\
+        filter(EntityGroups.group_code == EntityMembers.group_code).all()
 
-    return render_template('people_list.html', people_list=people_list)
+    # after submit
+    if form.validate_on_submit():
+        print(f"form: {form}")
+        print("After Submit")
+        member = EntityMembers(group_code=form.group_code.data, member_first_name=form.member_first_name.data,
+                               member_last_name=form.member_last_name.data, entity_code=current_user.user_city_code,
+                               title=form.title.data, position=form.position.data)
+
+        # validate new member
+        # user.set_password(form.password.data)
+        db.session.add(member)
+        db.session.commit()
+        return redirect(url_for('people_list'))
+
+    return render_template('people_list.html', people_list=people_list, form=form)
 
 
-@app.route('/group_list')
+@app.route('/member/<member_id>')
+@login_required
+def view_member(member_id):
+
+    form = EntityMemberForm()
+    member = db.session.query(EntityMembers, EntityGroups). \
+        filter(EntityMembers.id == member_id). \
+        filter(EntityGroups.group_code == EntityMembers.group_code).first()
+    start_date = ''
+    end_date = ''
+
+    if member.EntityMembers.start_date:
+        start_date = member.EntityMembers.start_date.strftime('%B %d, %Y')
+    if member.EntityMembers.end_date:
+        end_date = member.EntityMembers.end_date.strftime('%B %d, %Y')
+    return render_template('member_page.html', form=form, member=member, start_date=start_date, end_date=end_date)
+
+
+@app.route('/member/edit/<member_id>', methods=['GET', 'POST'])
+@login_required
+def edit_member(member_id):
+    member = EntityMembers.query.get(member_id)
+    form = EntityMemberForm()
+
+    if form.validate_on_submit():
+        print('validate')
+        print(f"Member: {form.member_first_name.data}")
+        print(f"Date: {form.start_date.data}")
+        member.member_first_name = form.member_first_name.data
+        member.member_last_name = form.member_last_name.data
+        member.group_code = form.group_code.data
+        member.title = form.title.data
+        member.position = form.position.data
+        member.start_date = form.start_date.data
+        member.end_date = form.end_date.data
+        # update database
+        db.session.add(member)
+        try:
+            db.session.commit()
+        except SQLAlchemyError as e:
+            error = str(e.__dict__['orig'])
+            print(error)
+
+        print('after save')
+
+        return redirect(url_for('view_member', member_id=member_id))
+
+    start_date = ''
+    end_date = ''
+    if member.start_date:
+        start_date = member.start_date.strftime('%B %d, %Y')
+        print(start_date)
+    if member.end_date:
+        end_date = member.end_date.strftime('%B %d, %Y')
+
+    form.member_first_name.data = member.member_first_name
+    form.member_last_name.data = member.member_last_name
+    form.group_code.data = member.group_code
+    form.title.data = member.title
+    form.position.data = member.position
+    form.end_date.data = member.end_date
+    form.start_date.data = member.start_date
+
+    first_name = member.member_first_name
+    last_name = member.member_last_name
+    member_title = member.title
+
+    return render_template('edit_member.html', form=form, first_name=first_name, last_name=last_name,
+                           member_title=member_title)
+
+
+@app.route('/group_list', methods=['GET', 'POST'])
 def group_list():
+
+    form = EntityGroupForm()
 
     # get all meetings
     group_list = db.session.query(EntityGroups).filter(EntityGroups.entity_code == current_user.user_city_code).all()
 
-    #for people in people_list:
-    #    print(f"{people.id} / {people.meeting_type} / {meeting.meeting_date} / {meeting.meeting_agenda}")
+    if form.validate_on_submit():
+        print(f"form: {form}")
+        print("After Submit")
 
-    return render_template('group_list.html', city_group_list=group_list)
+        print(f"Type: {form.group_type.data}")
+        print(f"Code: {form.group_code.data}")
+
+        group = EntityGroups(group_type=form.group_type.data, group_code=form.group_code.data,
+                             entity_code=current_user.user_city_code)
+        db.session.add(group)
+        db.session.commit()
+        return redirect(url_for('group_list'))
+
+    return render_template('group_list.html', city_group_list=group_list, form=form)
+
+
+@app.route('/group/<group_id>')
+@login_required
+def view_group(group_id):
+    form = EntityGroupForm()
+    group = EntityGroups.query.get(group_id)
+
+    return render_template('group_page.html', form=form, group=group)
+
+
+@app.route('/group/edit/<group_id>', methods=['GET', 'POST'])
+@login_required
+def edit_group(group_id):
+    group = EntityGroups.query.get(group_id)
+    form = EntityGroupForm()
+
+    if form.validate_on_submit():
+        group.group_type = form.group_type.data
+        group.group_code = form.group_code.data
+        db.session.add(group)
+        db.session.commit()
+
+        return redirect(url_for('view_group', group_id=group_id))
+
+    form.group_type.data = group.group_type
+    form.group_code.data = group.group_code
+
+    return render_template('edit_group.html', form=form)
+
 
 @app.route('/meeting_page/<meet_id>')
 def meeting_page(meet_id):
@@ -600,10 +753,10 @@ def attendance_list():
 
 @app.route('/test_dict/<meet_id>', methods=['GET', 'POST'])
 def test_dic(meet_id):
+    meeting = db.session.query(MeetingInfo).filter(MeetingInfo.id == meet_id).all()
     path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/json"
-    # file = open(f"{path}/{agenda_id}.txt", "r")
-    # agenda = json.load(file)
-    agenda = agenda_temp()
+    file = open(f"{path}/{meeting.meeting_agenda}.txt", "r")
+    agenda = json.load(file)
 
     jj = updated_agenda(agenda, meet_id)
 
@@ -616,6 +769,25 @@ def _process_meeting(meet_id):
     prompt = create_prompt(meet_id)
 
     return prompt
+
+
+@app.route('/test_stuff/<meet_id>')
+def test_stuff(meet_id):
+
+    # Get Meeting Object
+    # meeting_info = MeetingInfo.query.get(meet_id)
+
+    meeting = db.session.query(MeetingInfo).filter(MeetingInfo.id == meet_id).first()
+    path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/json"
+    file = open(f"{path}/{meeting.meeting_agenda}.txt", "r")
+    agenda = json.load(file)
+
+    # ua = updated_agenda_test(agenda, meet_id)
+    # ua = updated_agenda_2(agenda, meet_id)
+
+    # prompt = create_prompt(meet_id, meeting)
+
+    return 'done'
 
 
 @app.route('/load_data')

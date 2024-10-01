@@ -4,7 +4,7 @@ from app.models import User
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField, \
-    FieldList, FormField, Form, HiddenField, IntegerField
+    FieldList, FormField, Form, HiddenField, IntegerField, DateField
 from wtforms.validators import DataRequired, ValidationError, Email, EqualTo, Length, NumberRange
 from flask_ckeditor import CKEditorField
 
@@ -128,4 +128,31 @@ class UpdateAgendaForm(FlaskForm):
                                                          ('chart', 'Charter Commission')])
 
     members_present = FieldList(FormField(MembersPresentForm), min_entries=1)
+
+
+class EntityMemberForm(FlaskForm):
+    member_first_name = StringField('First Name', validators=[DataRequired()])
+    member_last_name = StringField('Last Name', validators=[DataRequired()])
+    title = StringField('Title', validators=[DataRequired()])
+    position = StringField('Position', validators=[DataRequired()])
+
+    group_code = SelectField('Group Type', choices=[('council', 'City Council'),
+                                                    ('hrc', 'Human Rights Commission'),
+                                                    ('plan', 'Planning Commission'),
+                                                    ('prf', 'Parks, Rec and Forestry'),
+                                                    ('sen', 'Senior Commission'),
+                                                    ('sus', 'Sustainability Committee'),
+                                                    ('chart', 'Charter Commission'),
+                                                    ('staff', 'Staff Member')])
+
+    start_date = DateField('Start Date')
+    end_date = DateField('End Date')
+    submit = SubmitField('Submit')
+
+
+class EntityGroupForm(FlaskForm):
+    group_type = StringField('Group Name', validators=[DataRequired()])
+    group_code = StringField('Group Code', validators=[DataRequired()])
+
+    submit = SubmitField('Add New Member')
 

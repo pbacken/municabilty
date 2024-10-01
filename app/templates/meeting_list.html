@@ -42,17 +42,17 @@
                                     {
                                       type: '{{ meeting.meeting_type }}',
                                       date: gridjs.html('<a href="meeting_page/{{ meeting.id }}">{{ meeting.meeting_date }}</a>'),
-                                      agenda: gridjs.html('<a href="meeting_process/{{ meeting.meeting_agenda }}/ {{ meeting.id }}">Agenda</a>'),
+                                      agenda: gridjs.html('<a href="meeting_process/{{ meeting.meeting_agenda }}/{{ meeting.id }}">Agenda</a>'),
                                         {% if meeting.meeting_minutes %}
-                                          minutes: gridjs.html('<a href="/preview_edit">Minutes</a>'),
+                                          minutes: gridjs.html('<a href="/review_minutes/{{ meeting.id }}">Minutes</a>'),
                                         {% else %}
-                                          minutes: gridjs.html('<a class="btn btn-orange" href="/process_minutes/{{ meeting.id}}" role="button">Process Minutes</a>'),
+                                          minutes: gridjs.html('<a class="btn btn-orange btn-sm" href="/create_minutes/{{ meeting.id}}" role="button">Create Minutes</a>'),
                                         {% endif %}
 
                                         {% if meeting.audio_name %}
-                                              audio_link: gridjs.html('<a class="btn btn-red" href="{{ url_for('index') }}" role="button">Re-Upload Audio</a>'),
+                                              audio_link: gridjs.html('<a class="btn btn-red btn-sm" href="{{ url_for('index') }}" role="button">Re-Upload Audio</a>'),
                                         {% else %}
-                                              audio_link: gridjs.html('<a class="btn btn-orange" href="/upload_audio/{{ meeting.id}}" role="button">Upload Audio</a>'),
+                                              audio_link: gridjs.html('<a class="btn btn-orange btn-sm" href="/upload_audio/{{ meeting.id}}" role="button">Upload Audio</a>'),
                                         {% endif %}
 
                                     },
