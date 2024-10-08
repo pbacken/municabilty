@@ -1,29 +1,6 @@
 {% extends "base.html" %}
 {% import "bootstrap_wtf.html" as wtf %}
     {% block content %}
-         <script>
-         function sendDownload(event) {
-              var data = CKEDITOR.instances.content.getData();
-
-              namespace = '/download_minutes';
-            var socket = io(namespace);
-
-            socket.on('connect', function() {
-                console.log('Requesting task to run')
-                socket.emit('download_minutes_task', {data: data, meet_id:{{ meet_id }}});
-            });
-
-            socket.on('task_done', function(msg, cb) {
-                socket.disconnect()
-                window.location.href = msg.url
-                console.log('after redirect...')
-                // if (cb)
-                //    cb();
-
-            });
-            event.preventDefault();
-         }
-    </script>
         <div class="container bg-primary">
             <div id="layoutAuthentication">
                 <div id="layoutAuthentication_content">
@@ -48,9 +25,8 @@
                                                   <div class="row">
                                                     <div class="col-md-4"> </div>
                                                     <div class="col-md-4"><button type="submit" name='create' class="btn btn-sm btn-primary float-end">Save Changes</button></div>
-                                                    <div class="col-md-4"><button type="button" id="dl_button" class="btn btn-secondary btn-sm float-end" onClick="sendDownload(event)">Download</button></div>
+                                                    <div class="col-md-4"><a class="btn btn-secondary btn-sm float-end" href="/review_minutes/download/{{ meet_id }}" role="button">Download</a></div>
                                                   </div>
-                                                  <div id="messages" ></div>
                                               </form>
                                               {{ ckeditor.load(pkg_type="basic") }}
                                               {{ ckeditor.config(name='content', width=400, height=500) }}

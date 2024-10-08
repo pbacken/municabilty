@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+    {% block content %}
+        <div class="container bg-primary">
+            <div id="layoutAuthentication">
+                <div id="layoutAuthentication_content">
+                    <main>
+                    <header class="page-header page-header-dark bg-gradient-primary-to-secondary pb-10">
+                        <div class="container-xl px-4">
+                            <div class="page-header-content pt-4">
+                                <div class="row align-items-center justify-content-between">
+                                    <div class="col-auto mt-4">
+                                        <h1 class="page-header-title">
+                                            <div class="page-header-icon"><i data-feather="users"></i></div>
+                                            {{current_user.user_city}} Meeting Info
+                                        </h1>
+                                        <div class="page-header-subtitle">Manage, View and Process</div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+                    <!-- Main page content-->
+                    <div class="container-xl px-4 mt-n10">
+                        <div class="row">
+                            <div class="card mb-8">
+
+                                <div class="card-header">
+                                <ul class="nav justify-content-end">
+                                  <li class="nav-item">
+                                    <a class="nav-link active" aria-current="page" href="#">Info</a>
+                                  </li>
+                                  <li class="nav-item">
+                                    <a class="nav-link" href="/meeting_process/{{ meeting.meeting_agenda}}/{{ meeting.id }}">Process Meeting</a>
+                                  </li>
+                                  <li class="nav-item">
+                                    <a class="nav-link" href="#">Minutes</a>
+                                  </li>
+                                  <li class="nav-item">
+                                    <a class="nav-link" href="/upload_audio/{{ meeting.id}}">Upload Audio</a>
+                                  </li>
+                                </ul>
+                                     <div class="h3">{{ meeting.meeting_type}} - {{ meeting.meeting_date}}</div>
+
+                                </div>
+
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-8">
+                                            <div class="card mb-4">
+                                                <div class="card-header">
+                                                    Meeting Info
+                                                </div>
+                                                <div class="card-body">
+                                                    <table class="table">
+                                                              <tbody>
+                                                                {{ form.csrf_token }}
+                                                                <tr>
+                                                                  <td>{{ form.meeting_type.label}}</td>
+                                                                  <td>{{ meeting.meeting_type }}</td>
+                                                                </tr>
+
+                                                                <tr>
+                                                                  <td>Agenda</td>
+                                                                  <td>
+                                                                      <a class="btn btn-link"  data-bs-toggle="modal" data-bs-target="#agendaModal">Agenda</a>
+                                                                  </td>
+                                                                </tr>
+
+                                                                 <tr>
+                                                                    <td>Audio</td>
+                                                                    <td>
+                                                                        {% if meeting.audio_name %}
+                                                                            Media Uploaded
+                                                                        {% else %}
+                                                                            <a class="btn btn-link" href="/upload_audio/{{ meeting.id}}" role="button">Upload Audio</a>
+                                                                        {% endif %}
+                                                                    </td>
+
+                                                                </tr>
+
+                                                                <tr>
+                                                                   <td>
+                                                                        Meeting Minutes
+                                                                    </td>
+                                                                    <td>
+                                                                        {% if meeting.meeting_minutes %}
+                                                                          <a href="/review_minutes/{{ meeting.id }}">Minutes</a>
+                                                                        {% else %}
+                                                                            {% if meeting.audio_name  %}
+                                                                                <a class="btn btn-link" href="/create_minutes/{{ meeting.id}}" role="button">Create Minutes</a>
+                                                                                {%  else %}
+                                                                            Need Media Upload
+                                                                            {% endif %}
+                                                                        {% endif %}
+
+                                                                    </td>
+
+                                                                </tr>
+
+                                                              </tbody>
+                                                    </table>
+                                                </div> <!-- end card body -->
+
+                                            </div>
+
+                                        </div>
+
+
+                                    </div>
+
+                                </div>
+
+                            </div> <!-- end card -->
+                        </div> <!-- end row -->
+                    </div> <!-- end container -->
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+   <!-- Modal -->
+<div class="modal fade" id="agendaModal" tabindex="-1" aria-labelledby="agendaLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="agendaLabel">Agenda</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          <h1 class="text-center">{{ current_user.user_city }}&nbsp{{ agenda['meet_type'] }}</h1>
+                                                <h4 class="text-center">{{ agenda['location'] }}</h4>
+                                                <h4 class="text-center">{{ agenda['date'] }}&nbsp{{ agenda['time'] }}</h4>
+                                                <br><br>
+                                                {% for each_section in agenda['sections'] %}
+                                                    {{ each_section['number'] }}. {{ each_section['title'] }} <br>
+                                                    {% if 'subitems' in each_section %}
+                                                        {% for each_sub in each_section['subitems'] %}
+                                                            &nbsp;&nbsp;&nbsp;{{ each_sub['number'] }}. {{ each_sub['title'] }}<br>
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                </br>
+                                                 {% endfor %}
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+
+
+      </div>
+
+    </div>
+  </div>
+  </form>
+</div>
+{% endblock %}
