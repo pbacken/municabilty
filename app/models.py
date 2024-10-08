@@ -20,6 +20,7 @@ class User(UserMixin, db.Model):
     user_city: so.Mapped[Optional[str]] = so.mapped_column(sa.String(64))
     user_city_code: so.Mapped[Optional[str]] = so.mapped_column(sa.String(64))
     about_me: so.Mapped[Optional[str]] = so.mapped_column(sa.String(140))
+    user_role: so.Mapped[str] = so.mapped_column(sa.String(120), nullable=True)
     last_seen: so.Mapped[Optional[datetime]] = so.mapped_column(
         default=lambda: datetime.now(timezone.utc))
 
@@ -62,10 +63,14 @@ class MeetingInfo(db.Model):
     meeting_type: so.Mapped[str] = so.mapped_column(sa.String(64), nullable=True)
     meeting_date: so.Mapped[str] = so.mapped_column(sa.String(64), nullable=True)
     meeting_time: so.Mapped[str] = so.mapped_column(sa.String(64), nullable=True)
+    # Actual Meet Start Time
+    meeting_time_start: so.Mapped[str] = so.mapped_column(sa.String(64), nullable=True)
     # UUID of json object, stored in app
     meeting_agenda: so.Mapped[str] = so.mapped_column(sa.String(32), nullable=True)
     # Agenda Filename
     agenda_name: so.Mapped[str] = so.mapped_column(sa.String(64), nullable=True)
+    # Agenda Updated
+    agenda_update: so.Mapped[str] = so.mapped_column(sa.String(32), nullable=True)
     meeting_minutes: so.Mapped[str] = so.mapped_column(sa.String(64), nullable=True)
     audio_name: so.Mapped[str] = so.mapped_column(sa.String(64), nullable=True)
 
