@@ -1,16 +1,18 @@
 from flask_wtf import FlaskForm
 from flask_login import current_user
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField, \
-    FieldList, FormField, Form
+    FieldList, FormField, Form, TimeField
 from app import app, db
 from app.models import User, EntityName, EntityMembers, EntityGroups
 
 
-def file_list_form_builder(members, meetings_list, meet_default, staff_list, motions_list, member_select_list, consent_list):
+def file_list_form_builder(members, meetings_list, meet_default, staff_list, motions_list, member_select_list,
+                           consent_list, agenda_time):
     class MemberListForm(FlaskForm):
         pass
 
     setattr(MemberListForm, 'meet_type', SelectField(choices=meetings_list, label='Meeting Type', default=meet_default))
+    setattr(MemberListForm, 'meet_time', TimeField(label='Meeting Start Time', default=agenda_time))
 
     member_list = []
     for (i, name) in enumerate(members):
@@ -69,6 +71,16 @@ def get_member_list(meet_default):
         member_select_list.append(full_name)
 
     return members, member_select_list
+
+
+def get_city_list():
+    city_list = db.session.query(EntityGroups).all()
+    cities = []
+    city_select_list = ['Select City', 'NA']
+    for city in city_list:
+        city_select_list.append((city['entity_name', city['entity_code']]))
+
+    return city_select_list
 
 
 def diary_speaker_list(diary):

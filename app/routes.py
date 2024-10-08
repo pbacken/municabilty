@@ -125,7 +125,7 @@ def register():
     city_select_list = [('na', 'Choose City')]
     city_select_dict={}
     for i in city_list:
-        city_select_list.append((i.entity_code, i.entity_name.title()))
+        city_select_list.append((i.entity_code, i.entity_name.title()favicon-32x32.png))
         city_select_dict[i.entity_code] = i.entity_name
     # city_select_list = [(i.entity_code, i.entity_name) for i in city_list]
     form = RegistrationForm()

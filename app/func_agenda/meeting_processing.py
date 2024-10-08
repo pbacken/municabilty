@@ -65,6 +65,8 @@ def create_minutes(prompt, meeting):
 
     # create path to file
     # audio_path = f"{app.config['UPLOAD_PATH']}/{current_user.user_city}/audio/{meeting.audio_name}"
+    start = datetime.now()
+    print(str(start))
 
     aai.settings.api_key = os.environ['AAI_API_KEY']
 
@@ -121,6 +123,12 @@ def create_minutes(prompt, meeting):
     # update meeting object with minutes file name
     meeting.meeting_minutes = f"{meeting.meeting_entity}_{meet_code}_{dt}"
     db.session.commit()
+
+    after = datetime.now()
+    print(str(after))
+    print(after - start)
+
+    print("Audio extraction successful!")
 
     return result.response
 

@@ -187,9 +187,12 @@ def updated_agenda(agenda, meet_id):
         if each_section['title'].casefold() in ml_sm:
             # check if consent
             if 'consent' in each_section['title'].casefold():
+                print('Found Consent')
+                print(f'Consent: ')
                 # print(f"Motion by: {mot_call[ml_sm[each_section['title'].casefold()][0]]} "
                       # f"/  Seconded: {mot_call[ml_sm[each_section['title'].casefold()][0] + '_2']}")
-                agenda_votes += f"Motion by: {mot_call[ml_sm[each_section['title'].casefold()][0]]} /  Seconded: {mot_call[ml_sm[each_section['title'].casefold()][0] + '_2']}"
+                if each_section['title'].casefold() in mot_call:
+                    agenda_votes += f"Motion by: {mot_call[ml_sm[each_section['title'].casefold()][0]]} /  Seconded: {mot_call[ml_sm[each_section['title'].casefold()][0] + '_2']}"
             # check if each_section has subitems
             if 'subitems' in each_section:
                 for each_sub in each_section['subitems']:

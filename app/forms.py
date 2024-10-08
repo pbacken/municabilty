@@ -5,7 +5,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField, \
     FieldList, FormField, Form, HiddenField, IntegerField, DateField
-from wtforms.validators import DataRequired, ValidationError, Email, EqualTo, Length, NumberRange
+from wtforms.validators import DataRequired, ValidationError, Email, EqualTo, Length, NumberRange, InputRequired
 from flask_ckeditor import CKEditorField
 
 
@@ -19,7 +19,8 @@ class LoginForm(FlaskForm):
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
-    user_city = StringField('City', validators=[DataRequired()])
+    # user_city = StringField('City', validators=[DataRequired()])
+    user_city = SelectField('City', validators=[InputRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField(
         'Repeat Password', validators=[DataRequired(), EqualTo('password')])
@@ -42,6 +43,9 @@ class EditProfileForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     user_city = StringField('City', render_kw={'readonly': True})
     about_me = TextAreaField('About me', validators=[Length(min=0, max=140)])
+    # user_role = SelectField('User Role', choices=[('acc_admin', 'Account Admin'),
+    #                                              ('user', 'User'),
+    #                                              ('viewer', 'Viewer')])
 
     submit = SubmitField('Submit')
 
